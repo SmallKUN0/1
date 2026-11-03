@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a6fe8">
+<title>下载10月7日作业</title>
+<style>
+  /* ===== 全局重置：禁用一切圆角 ===== */
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    border-radius: 0 !important;
+    -webkit-border-radius: 0 !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 18px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    color: #123a6b;
+    background-color: #eaf3ff;
+    background-image:
+      radial-gradient(circle at 12% 18%, rgba(26, 111, 232, 0.16), transparent 42%),
+      radial-gradient(circle at 88% 82%, rgba(26, 111, 232, 0.14), transparent 45%),
+      linear-gradient(135deg, #eaf3ff 0%, #ffffff 50%, #dcebff 100%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== 卡片容器 ===== */
+  .card {
+    width: 100%;
+    max-width: 480px;
+    background: #ffffff;
+    border: 1px solid #c8ddfa;
+    border-top: 6px solid #1a6fe8;
+    padding: 44px 32px 36px;
+    text-align: center;
+    box-shadow: 0 14px 36px rgba(26, 111, 232, 0.14);
+  }
+
+  /* ===== 标题 ===== */
+  .title {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.45;
+    letter-spacing: 1px;
+    color: #0b3f8f;
+  }
+
+  .title::after {
+    content: "";
+    display: block;
+    width: 56px;
+    height: 4px;
+    margin: 16px auto 0;
+    background: #1a6fe8;
+  }
+
+  .subtitle {
+    margin-top: 20px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #5b7ba6;
+  }
+
+  /* ===== 文件信息 ===== */
+  .file-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 26px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #2a5da8;
+    background: #f2f7ff;
+    border: 1px dashed #b9d4f7;
+    word-break: break-all;
+  }
+
+  .file-info .tag {
+    flex: none;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffffff;
+    background: #1a6fe8;
+  }
+
+  /* ===== 下载按钮 ===== */
+  .download-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 26px;
+    padding: 17px 22px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #ffffff;
+    text-decoration: none;
+    background: #1a6fe8;
+    border: 2px solid #1a6fe8;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+      box-shadow 0.2s ease, transform 0.08s ease;
+  }
+
+  .download-btn:hover {
+    background: #1259bd;
+    border-color: #1259bd;
+    box-shadow: 0 8px 20px rgba(26, 111, 232, 0.32);
+  }
+
+  .download-btn:active {
+    transform: translateY(1px);
+    box-shadow: none;
+  }
+
+  .download-btn:focus-visible {
+    outline: 3px solid #9fc4f7;
+    outline-offset: 3px;
+  }
+
+  .download-btn svg {
+    flex: none;
+    width: 22px;
+    height: 22px;
+  }
+
+  /* ===== 底部提示 ===== */
+  .tip {
+    margin-top: 20px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #8aa4c6;
+  }
+
+  /* ===== 移动端适配 ===== */
+  @media (max-width: 480px) {
+    body {
+      padding: 20px 14px;
+    }
+
+    .card {
+      padding: 34px 20px 28px;
+      border-top-width: 5px;
+    }
+
+    .title {
+      font-size: 21px;
+    }
+
+    .title::after {
+      width: 46px;
+      height: 3px;
+      margin-top: 13px;
+    }
+
+    .subtitle {
+      margin-top: 16px;
+      font-size: 13px;
+    }
+
+    .file-info {
+      margin-top: 20px;
+      font-size: 12px;
+    }
+
+    .download-btn {
+      margin-top: 22px;
+      padding: 16px 18px;
+      font-size: 16px;
+    }
+  }
+
+  /* 横屏小高度设备 */
+  @media (max-height: 420px) and (orientation: landscape) {
+    body {
+      align-items: flex-start;
+    }
+
+    .card {
+      padding: 22px 20px;
+    }
+
+    .subtitle,
+    .file-info {
+      margin-top: 14px;
+    }
+
+    .download-btn {
+      margin-top: 16px;
+      padding: 13px 18px;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <main class="card">
+    <h1 class="title">下载10月7日作业</h1>
+
+    <p class="subtitle">点击下方按钮即可下载作业文件</p>
+
+    <div class="file-info">
+      <span class="tag">APK</span>
+      <span>10-07.apk</span>
+    </div>
+
+    <a class="download-btn" href="10-07.apk" download="10-07.apk" type="application/vnd.android.package-archive">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">
+        <path d="M12 3v12"></path>
+        <path d="M6 10l6 6 6-6"></path>
+        <path d="M4 20h16"></path>
+      </svg>
+      立即下载
+    </a>
+
+    <p class="tip">请确保 10-07.apk 与本页面位于同一目录下</p>
+  </main>
+
+</body>
+</html>
