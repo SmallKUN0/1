@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>坤坤作品集</title>
+
+<!-- 第三方 API：Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --orange:#ff7a18;
+    --orange-2:#ff9d4d;
+    --orange-3:#ffb877;
+    --cream:#fff7f0;
+    --ink:#5a3418;
+    --ink-2:#a8663a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;}
+  body{
+    font-family:'ZCOOL KuaiLe','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    color:var(--ink);
+    background:#fff7f0;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ============ SVG 橙白背景 ============ */
+  .bg-svg{
+    position:fixed; inset:0; width:100%; height:100%;
+    z-index:0; pointer-events:none;
+  }
+  .shape{ transform-box: fill-box; transform-origin: center; }
+  .s1{ animation: floatA 9s ease-in-out infinite; }
+  .s2{ animation: spinSlow 26s linear infinite; }
+  .s3{ animation: floatB 7.5s ease-in-out infinite; }
+  .s4{ animation: pulse 4s ease-in-out infinite; }
+  .s5{ animation: floatA 6s ease-in-out infinite .8s; }
+  .s6{ animation: floatB 13s ease-in-out infinite; }
+  .s7{ animation: pulse 5s ease-in-out infinite 1.2s; }
+  .s8{ animation: floatA 8s ease-in-out infinite 1.5s; }
+
+  /* 背景静态模式（进入开发者模式 / 阅览作品时启用） */
+  .bg-svg.paused .shape{ animation-play-state: paused; }
+
+  @keyframes floatA{
+    0%,100%{ transform: translateY(0) rotate(0deg); }
+    50%    { transform: translateY(-30px) rotate(8deg); }
+  }
+  @keyframes floatB{
+    0%,100%{ transform: translate(0,0); }
+    50%    { transform: translate(-26px,-22px); }
+  }
+  @keyframes spinSlow{ to{ transform: rotate(360deg); } }
+  @keyframes pulse{
+    0%,100%{ transform: scale(1); opacity:.55; }
+    50%    { transform: scale(1.3); opacity:.95; }
+  }
+
+  /* ============ 加载遮罩 ============ */
+  #loading{
+    position:fixed; inset:0; z-index:999;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.1rem;
+    background:linear-gradient(135deg,#ffffff 0%,#fff4ea 55%,#ffe3c8 100%);
+    transition:opacity .55s ease;
+  }
+  #loading.hide{ opacity:0; pointer-events:none; }
+  .spinner{
+    width:56px;height:56px;border-radius:50%;
+    border:5px solid rgba(255,122,24,.18);
+    border-top-color:var(--orange);
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  #loading p{
+    margin:0; font-size:1.05rem; letter-spacing:.12em; color:var(--orange);
+    animation:breath 1.6s ease-in-out infinite;
+  }
+  @keyframes breath{ 0%,100%{opacity:.55;} 50%{opacity:1;} }
+
+  /* ============ 视图容器 ============ */
+  .view{
+    position:fixed; inset:0; z-index:2;
+    display:flex; flex-direction:column;
+    opacity:0; pointer-events:none; transform:scale(.985);
+    transition:opacity .45s ease, transform .45s ease;
+  }
+  .view.active{ opacity:1; pointer-events:auto; transform:scale(1); }
+
+  /* ============ 首页 ============ */
+  #view-home{ align-items:center; justify-content:center; padding:2rem 1.4rem; text-align:center; }
+
+  .title{
+    margin:0 0 .5rem;
+    font-family:'Ma Shan Zheng','ZCOOL KuaiLe',cursive;
+    font-size:clamp(2.6rem, 10vw, 6rem);
+    line-height:1.15;
+    letter-spacing:.04em;
+    background:linear-gradient(180deg,#ffb877 0%,#ff9d4d 40%,#ff6a00 100%);
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent; color:transparent;
+    filter:drop-shadow(0 8px 18px rgba(255,122,24,.28));
+    animation:riseIn .9s cubic-bezier(.2,.9,.3,1.2) both;
+  }
+  .subtitle{
+    margin:0 0 2.2rem;
+    font-size:clamp(.95rem, 2.7vw, 1.3rem);
+    color:var(--ink-2);
+    letter-spacing:.06em;
+    animation:riseIn .9s cubic-bezier(.2,.9,.3,1.2) .12s both;
+  }
+  @keyframes riseIn{
+    from{ opacity:0; transform:translateY(26px) scale(.96); }
+    to  { opacity:1; transform:translateY(0) scale(1); }
+  }
+  .actions{
+    display:flex; flex-wrap:wrap; gap:1rem; justify-content:center;
+    animation:riseIn .9s cubic-bezier(.2,.9,.3,1.2) .24s both;
+  }
+
+  /* ============ 按钮 ============ */
+  .btn{
+    font-family:inherit; font-size:1.02rem; cursor:pointer;
+    border:none; border-radius:999px; padding:.85rem 1.9rem;
+    transition:transform .22s ease, box-shadow .22s ease, background .22s ease;
+    letter-spacing:.05em;
+  }
+  .btn.primary{
+    color:#fff;
+    background:linear-gradient(135deg,#ffb877 0%,#ff9d4d 40%,#ff6a00 100%);
+    box-shadow:0 10px 24px rgba(255,106,0,.35);
+  }
+  .btn.primary:hover{ transform:translateY(-3px); box-shadow:0 16px 30px rgba(255,106,0,.45); }
+  .btn.primary:active{ transform:translateY(0) scale(.97); }
+  .btn.primary:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+  .btn.ghost{
+    color:var(--orange);
+    background:rgba(255,255,255,.8);
+    border:2px solid rgba(255,122,24,.42);
+    box-shadow:0 6px 16px rgba(255,122,24,.12);
+  }
+  .btn.ghost:hover{ transform:translateY(-3px); background:#fff; border-color:var(--orange); }
+
+  /* ============ 列表页 ============ */
+  .list-header{
+    display:flex; align-items:center; gap:.8rem;
+    padding:1rem 1.2rem .6rem;
+    max-width:960px; width:100%; margin:0 auto;
+  }
+  .list-title{
+    flex:1; margin:0; text-align:center;
+    font-family:'Ma Shan Zheng',cursive;
+    font-size:1.7rem; color:var(--orange);
+    letter-spacing:.08em;
+  }
+  .icon-btn{
+    font-family:inherit; font-size:.92rem; cursor:pointer;
+    padding:.5rem 1rem; border-radius:999px;
+    color:var(--orange); background:rgba(255,255,255,.85);
+    border:2px solid rgba(255,122,24,.35);
+    transition:.22s; white-space:nowrap;
+  }
+  .icon-btn:hover{ background:#fff; border-color:var(--orange); transform:translateY(-2px); }
+
+  .works{
+    flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+    padding:.4rem 1.2rem 7.5rem;
+    max-width:960px; width:100%; margin:0 auto;
+    display:flex; flex-direction:column; gap:.9rem;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(255,122,24,.45) transparent;
+  }
+  .works::-webkit-scrollbar{ width:8px; }
+  .works::-webkit-scrollbar-thumb{ background:rgba(255,122,24,.4); border-radius:8px; }
+  .works::-webkit-scrollbar-track{ background:transparent; }
+
+  .card{
+    position:relative;
+    padding:1rem 1.15rem 1rem 1.15rem;
+    border-radius:18px;
+    background:rgba(255,255,255,.86);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:2px solid rgba(255,157,77,.32);
+    cursor:pointer;
+    transition:transform .22s ease, box-shadow .22s ease, border-color .22s, background .22s;
+    animation:cardIn .45s ease both;
+  }
+  @keyframes cardIn{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+  .card:hover{
+    transform:translateY(-3px);
+    border-color:var(--orange-2);
+    box-shadow:0 12px 26px rgba(255,122,24,.18);
+  }
+  .card.selected{
+    border-color:var(--orange);
+    background:linear-gradient(135deg,#ffffff 0%,#fff1e2 100%);
+    box-shadow:0 12px 30px rgba(255,122,24,.26);
+  }
+  .card.selected::after{
+    content:"✓";
+    position:absolute; top:.7rem; right:.9rem;
+    width:24px;height:24px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:.8rem;color:#fff;
+    background:linear-gradient(135deg,#ff9d4d,#ff6a00);
+  }
+  .card-id{
+    display:inline-block;
+    font-size:.76rem; letter-spacing:.06em;
+    color:#fff; background:linear-gradient(135deg,#ffb877,#ff7a18);
+    padding:.14rem .6rem; border-radius:999px; margin-bottom:.5rem;
+  }
+  .card-name{
+    font-size:1.14rem; font-weight:600; color:#5a3418;
+    margin:0 0 .35rem; word-break:break-all;
+  }
+  .card-text{
+    font-size:.9rem; line-height:1.6; color:#8a5a33;
+    margin:0; word-break:break-all;
+  }
+  .empty{
+    text-align:center; color:#b98a5e; padding:3rem 1rem;
+    font-size:1rem; letter-spacing:.06em;
+  }
+
+  /* 选中操作条 */
+  .selbar{
+    position:fixed; left:50%; bottom:1.2rem;
+    z-index:20;
+    display:flex; align-items:center; gap:1rem;
+    padding:.7rem .8rem .7rem 1.4rem;
+    border-radius:999px;
+    background:rgba(255,255,255,.94);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border:2px solid rgba(255,157,77,.45);
+    box-shadow:0 16px 40px rgba(255,122,24,.25);
+    transform:translateX(-50%) translateY(150%);
+    transition:transform .4s cubic-bezier(.2,.9,.3,1.2);
+    max-width:calc(100vw - 2rem);
+  }
+  .selbar.show{ transform:translateX(-50%) translateY(0); }
+  .sel-name{
+    font-size:.95rem; color:var(--orange);
+    max-width:46vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+
+  /* ============ 弹窗 ============ */
+  .modal{
+    position:fixed; inset:0; z-index:60;
+    display:flex; align-items:center; justify-content:center;
+    padding:1rem;
+    background:rgba(90,52,24,.34);
+    backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);
+    opacity:0; pointer-events:none; transition:opacity .3s ease;
+  }
+  .modal.show{ opacity:1; pointer-events:auto; }
+
+  /* 确认弹窗必须盖过全屏阅览层(90)与悬浮球(95) */
+  #modal-confirm{ z-index:300; }
+
+  .modal-box{
+    width:100%; max-width:520px; max-height:90vh; overflow-y:auto;
+    padding:1.7rem 1.6rem;
+    border-radius:24px;
+    background:#fff;
+    box-shadow:0 24px 70px rgba(255,122,24,.28);
+    transform:translateY(24px) scale(.97);
+    transition:transform .32s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .modal.show .modal-box{ transform:translateY(0) scale(1); }
+  .modal-box.wide{ max-width:740px; }
+  .modal-box h3{
+    margin:0 0 1rem;
+    font-family:'Ma Shan Zheng',cursive;
+    font-size:1.55rem; color:var(--orange); letter-spacing:.06em;
+  }
+  .modal-box p.hint{ margin:0 0 1.2rem; color:#8a5a33; font-size:.95rem; }
+  .row{ display:flex; gap:.8rem; flex-wrap:wrap; justify-content:center; }
+  .row.left{ justify-content:flex-start; }
+
+  /* 表单 */
+  .field{ display:block; margin-bottom:.85rem; }
+  .field > span{
+    display:block; font-size:.85rem; color:var(--ink-2);
+    margin-bottom:.35rem; letter-spacing:.05em;
+  }
+  .field input, .field textarea{
+    width:100%; font-family:inherit; font-size:.95rem;
+    padding:.65rem .9rem;
+    color:var(--ink);
+    border:2px solid rgba(255,157,77,.35);
+    border-radius:12px;
+    background:#fffdfb;
+    outline:none; resize:vertical;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .field input:focus, .field textarea:focus{
+    border-color:var(--orange-2);
+    box-shadow:0 0 0 4px rgba(255,157,77,.16);
+  }
+  .field textarea.code{
+    font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;
+    font-size:.86rem; line-height:1.55;
+    background:#2b1a0e; color:#ffd9b3;
+    border-color:rgba(255,157,77,.6);
+  }
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:.8rem; }
+  @media (max-width:560px){ .two-col{ grid-template-columns:1fr; } }
+
+  .status{
+    min-height:1.4rem;
+    font-size:.88rem; letter-spacing:.04em;
+    color:#a8663a; margin:.2rem 0 1rem;
+    word-break:break-all;
+  }
+  .status.ok{ color:#1f9d55; }
+  .status.err{ color:#e0432e; }
+
+  /* ============ 全屏阅览 ============ */
+  .fullscreen{
+    position:fixed; inset:0; z-index:90;
+    background:#fff;
+    display:none;
+  }
+  .fullscreen.show{ display:block; }
+  .fullscreen iframe{ width:100%; height:100%; border:0; display:block; }
+
+  /* 可拖动的退出悬浮球 */
+  .ball{
+    position:fixed; right:24px; bottom:40px;
+    width:58px; height:58px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.4rem; color:#fff; font-weight:700;
+    background:linear-gradient(135deg,#ffb877,#ff6a00);
+    box-shadow:0 10px 26px rgba(255,106,0,.5);
+    cursor:grab;
+    touch-action:none;
+    user-select:none; -webkit-user-select:none;
+    z-index:95;
+    transition:box-shadow .2s;
+  }
+  .ball:active{ cursor:grabbing; box-shadow:0 6px 18px rgba(255,106,0,.65); }
+
+  /* ============ 窗口阅览 ============ */
+  .window-viewer{
+    position:fixed; inset:0; z-index:88;
+    display:none; align-items:center; justify-content:center;
+    padding:1rem;
+    background:rgba(90,52,24,.36);
+    backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+  }
+  .window-viewer.show{ display:flex; }
+  .wv-box{
+    width:min(92vw, 1100px);
+    height:min(86vh, 820px);
+    display:flex; flex-direction:column;
+    background:#fff; border-radius:20px; overflow:hidden;
+    box-shadow:0 28px 80px rgba(0,0,0,.34);
+    animation:cardIn .32s ease both;
+  }
+  .wv-bar{
+    display:flex; align-items:center; gap:.8rem;
+    padding:.6rem .9rem;
+    background:linear-gradient(135deg,#fff7f0,#ffe9d6);
+    border-bottom:2px solid rgba(255,157,77,.28);
+    flex:0 0 auto;
+  }
+  .wv-title{
+    flex:1; font-size:.95rem; color:var(--orange);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .wv-close{
+    width:32px;height:32px;border-radius:50%;
+    border:none; cursor:pointer;
+    color:#fff; font-size:.95rem; line-height:1;
+    background:linear-gradient(135deg,#ff9d4d,#ff6a00);
+    transition:.2s;
+  }
+  .wv-close:hover{ transform:rotate(90deg); }
+  .wv-box iframe{ flex:1; width:100%; border:0; display:block; }
+
+  @media (max-width:600px){
+    .works{ padding-bottom:8.5rem; }
+    .sel-name{ max-width:38vw; }
+    .ball{ width:52px;height:52px; right:16px; bottom:28px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== SVG 橙白动画背景 ==================== -->
+<svg class="bg-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="45%"  stop-color="#fff6ee"/>
+      <stop offset="100%" stop-color="#ffe3c8"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop offset="0%"   stop-color="#ff9a3c" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#ff9a3c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="orangeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#ffb877"/>
+      <stop offset="100%" stop-color="#ff6a00"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 底色 -->
+  <rect width="1440" height="900" fill="url(#bgGrad)"/>
+
+  <!-- 光晕 -->
+  <circle cx="220"  cy="160" r="300" fill="url(#glow)"/>
+  <circle cx="1240" cy="760" r="340" fill="url(#glow)"/>
+  <circle cx="760"  cy="470" r="260" fill="url(#glow)" opacity="0.55"/>
+
+  <!-- 装饰图形 -->
+  <g class="shape s1">
+    <circle cx="180" cy="700" r="72" fill="none" stroke="url(#orangeGrad)" stroke-width="10" opacity="0.55"/>
+  </g>
+
+  <g class="shape s2">
+    <rect x="1150" y="130" width="118" height="118" rx="26"
+          fill="none" stroke="#ff8c2b" stroke-width="9" opacity="0.45"/>
+  </g>
+
+  <g class="shape s3">
+    <polygon points="720,80 792,208 648,208" fill="none" stroke="#ff9d4d" stroke-width="9" opacity="0.5"/>
+  </g>
+
+  <g class="shape s4">
+    <circle cx="1300" cy="470" r="34" fill="url(#orangeGrad)" opacity="0.65"/>
+  </g>
+
+  <g class="shape s5">
+    <circle cx="330" cy="330" r="22" fill="#ffb877" opacity="0.85"/>
+  </g>
+
+  <g class="shape s7">
+    <circle cx="900" cy="160" r="14" fill="#ff8c2b" opacity="0.75"/>
+    <circle cx="982" cy="118" r="9"  fill="#ffb877" opacity="0.85"/>
+    <circle cx="842" cy="224" r="11" fill="#ff9d4d" opacity="0.65"/>
+  </g>
+
+  <g class="shape s8">
+    <circle cx="480" cy="520" r="16" fill="none" stroke="#ff8c2b" stroke-width="6" opacity="0.5"/>
+    <circle cx="1120" cy="700" r="20" fill="none" stroke="#ffb877" stroke-width="7" opacity="0.55"/>
+  </g>
+
+  <g class="shape s6">
+    <path d="M0,830 C220,760 420,890 640,830 C860,770 1080,890 1440,810 L1440,900 L0,900 Z"
+          fill="url(#orangeGrad)" opacity="0.16"/>
+  </g>
+</svg>
+
+<!-- ==================== 字体加载提示 ==================== -->
+<div id="loading">
+  <div class="spinner"></div>
+  <p>字体加载中…</p>
+</div>
+
+<!-- ==================== 首页 ==================== -->
+<section id="view-home" class="view active">
+  <h1 class="title">坤坤作品集</h1>
+  <p class="subtitle">HT小坤坤ML为大家创建的作品名单</p>
+  <div class="actions">
+    <button class="btn primary" id="btn-list">查看作品列表</button>
+    <button class="btn ghost"   id="btn-dev">开发者模式</button>
+  </div>
+</section>
+
+<!-- ==================== 作品列表页 ==================== -->
+<section id="view-list" class="view">
+  <div class="list-header">
+    <button class="icon-btn" id="btn-back">← 返回</button>
+    <h2 class="list-title">作品列表</h2>
+    <button class="icon-btn" id="btn-refresh">⟳ 刷新</button>
+  </div>
+  <div id="works" class="works"></div>
+
+  <div id="selbar" class="selbar">
+    <span id="sel-name" class="sel-name">未选择作品</span>
+    <button class="btn primary" id="btn-read">阅 览</button>
+  </div>
+</section>
+
+<!-- ==================== 阅览方式选择 ==================== -->
+<div class="modal" id="modal-view">
+  <div class="modal-box">
+    <h3>选择阅览方式</h3>
+    <p class="hint" id="view-work-name"></p>
+    <div class="row">
+      <button class="btn primary" id="btn-read-full">全屏阅览</button>
+      <button class="btn ghost"   id="btn-read-window">窗口展示</button>
+    </div>
+    <div class="row" style="margin-top:1rem;">
+      <button class="btn ghost" id="btn-read-cancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 开发者模式 ==================== -->
+<div class="modal" id="modal-dev">
+  <div class="modal-box wide">
+    <h3>开发者模式</h3>
+
+    <label class="field">
+      <span>GitHub Token（需 repo 权限）</span>
+      <input id="dev-token" type="password" placeholder="ghp_xxxxxxxxxxxxxxxx" autocomplete="off">
+    </label>
+
+    <div class="two-col">
+      <label class="field">
+        <span>Owner</span>
+        <input id="dev-owner" placeholder="github 用户名">
+      </label>
+      <label class="field">
+        <span>Repo</span>
+        <input id="dev-repo" placeholder="仓库名">
+      </label>
+    </div>
+
+    <label class="field">
+      <span>分支</span>
+      <input id="dev-branch" value="main" placeholder="main">
+    </label>
+
+    <label class="field">
+      <span>作品名称</span>
+      <input id="dev-name" placeholder="例如：我的第一个小作品">
+    </label>
+
+    <label class="field">
+      <span>作品简介</span>
+      <textarea id="dev-text" rows="2" placeholder="简单介绍一下这个作品…"></textarea>
+    </label>
+
+    <label class="field">
+      <span>作品代码（完整 HTML）</span>
+      <textarea id="dev-code" class="code" rows="12" placeholder="&lt;!DOCTYPE html&gt;&#10;&lt;html&gt;...&lt;/html&gt;"></textarea>
+    </label>
+
+    <div id="dev-status" class="status"></div>
+
+    <div class="row left">
+      <button class="btn primary" id="dev-submit">新增作品</button>
+      <button class="btn ghost"   id="dev-close">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 全屏阅览 ==================== -->
+<div class="fullscreen" id="fullscreen">
+  <iframe id="fs-frame" title="作品全屏阅览"></iframe>
+  <div class="ball" id="fs-ball" title="拖动可移动，快速点击退出">✕</div>
+</div>
+
+<!-- ==================== 窗口阅览 ==================== -->
+<div class="window-viewer" id="windowViewer">
+  <div class="wv-box">
+    <div class="wv-bar">
+      <span class="wv-title" id="wv-title">作品阅览</span>
+      <button class="wv-close" id="wv-close">✕</button>
+    </div>
+    <iframe id="wv-frame" title="作品窗口阅览"></iframe>
+  </div>
+</div>
+
+<!-- ==================== 确认对话框（置于最末，确保层叠之上） ==================== -->
+<div class="modal" id="modal-confirm">
+  <div class="modal-box" style="max-width:400px;">
+    <h3>提示</h3>
+    <p class="hint" id="confirm-msg">确定吗？</p>
+    <div class="row">
+      <button class="btn primary" id="confirm-ok">确定</button>
+      <button class="btn ghost"   id="confirm-cancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =========================================================
+   *  配置区
+   * ========================================================= */
+  const CONFIG = {
+    htmlDir: 'HTML',          // 作品本体目录  ->  HTML/<编号>.html
+    nameDir: 'HTML-NAME',     // 作品名称目录  ->  HTML-NAME/<编号>-NAME.txt
+    textDir: 'HTML-TEXT',     // 作品简介目录  ->  HTML-TEXT/<编号>-TEXT.txt
+    group: '',                // 若文件放在 HTML/<子目录>/ 下，把子目录名填这里
+    maxScan: 200,             // 最多扫描到多少号
+    concurrency: 8            // 并发探测数量
+  };
+
+  const LS_KEY = 'kk_portfolio_dev_cfg';
+
+  /* =========================================================
+   *  工具函数
+   * ========================================================= */
+  const $ = (id) => document.getElementById(id);
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function dirPath(dir) {
+    return CONFIG.group ? dir + '/' + CONFIG.group : dir;
+  }
+  const workUrl = (id) => dirPath(CONFIG.htmlDir) + '/' + id + '.html';
+  const nameUrl = (id) => dirPath(CONFIG.nameDir) + '/' + id + '-NAME.txt';
+  const textUrl = (id) => dirPath(CONFIG.textDir) + '/' + id + '-TEXT.txt';
+
+  /* =========================================================
+   *  字体加载
+   * ========================================================= */
+  function hideLoading() {
+    const el = $('loading');
+    if (!el || el.classList.contains('hide')) return;
+    el.classList.add('hide');
+    setTimeout(() => { el.style.display = 'none'; }, 650);
+  }
+
+  function waitFonts() {
+    const sample = '坤坤作品集HT小坤坤ML为大家创建的作品名单查看作品列表开发者模式阅览刷新返回新增';
+    const tasks = [];
+    if (document.fonts && document.fonts.load) {
+      tasks.push(document.fonts.load('64px "Ma Shan Zheng"', sample));
+      tasks.push(document.fonts.load('20px "ZCOOL KuaiLe"', sample));
+    }
+    const all = Promise.all(tasks).catch(() => {});
+    const timeout = new Promise((res) => setTimeout(res, 6000));
+    return Promise.race([all, timeout]);
+  }
+
+  /* =========================================================
+   *  背景静态/动态控制
+   * ========================================================= */
+  function setupBgAnimationControl() {
+    const bgSvg = document.querySelector('.bg-svg');
+    if (!bgSvg) return;
+
+    const targets = [$('modal-dev'), $('fullscreen'), $('windowViewer')].filter(Boolean);
+
+    const update = () => {
+      const paused = targets.some((el) => el.classList.contains('show'));
+      bgSvg.classList.toggle('paused', paused);
+    };
+
+    const observer = new MutationObserver(update);
+    targets.forEach((el) => {
+      observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
+
+    update();
+  }
+
+  /* =========================================================
+   *  文件读取
+   * ========================================================= */
+  async function fetchText(url) {
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) return null;
+      const t = (await r.text()).trim();
+      return t || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function exists(url) {
+    try {
+      const r = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      if (r.ok) return true;
+      if (r.status === 405 || r.status === 501) {
+        const r2 = await fetch(url, { method: 'GET', cache: 'no-store' });
+        return r2.ok;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /** 扫描存在的作品编号（最小从 1 开始） */
+  async function scanIds() {
+    const found = [];
+    let missStreak = 0;
+    const total = CONFIG.maxScan;
+    const conc = CONFIG.concurrency;
+
+    for (let start = 1; start <= total; start += conc) {
+      const batch = [];
+      let hit = 0;
+      for (let id = start; id < start + conc && id <= total; id++) {
+        batch.push(
+          exists(workUrl(id)).then((ok) => {
+            if (ok) { found.push(id); hit++; }
+          })
+        );
+      }
+      await Promise.all(batch);
+
+      if (hit === 0) missStreak += conc; else missStreak = 0;
+      if (found.length && missStreak >= 40) break;
+    }
+    return found.sort((a, b) => a - b);
+  }
+
+  /* =========================================================
+   *  作品数据
+   * ========================================================= */
+  let works = [];
+  let selectedId = null;
+  let loadingWorks = false;
+
+  async function loadWorks(force) {
+    if (loadingWorks) return;
+    loadingWorks = true;
+
+    const box = $('works');
+    box.innerHTML = '<div class="empty">正在读取作品列表…</div>';
+
+    try {
+      const ids = await scanIds();
+      const list = await Promise.all(ids.map(async (id) => {
+        const [n, t] = await Promise.all([fetchText(nameUrl(id)), fetchText(textUrl(id))]);
+        return {
+          id: id,
+          name: n || ('作品 ' + id),
+          text: t || '（暂无简介）'
+        };
+      }));
+      works = list;
+      if (selectedId !== null && !works.some(w => w.id === selectedId)) {
+        selectedId = null;
+      }
+      renderWorks();
+    } catch (err) {
+      box.innerHTML = '<div class="empty">读取失败：' + esc(err.message) + '</div>';
+    } finally {
+      loadingWorks = false;
+    }
+  }
+
+  function renderWorks() {
+    const box = $('works');
+
+    if (!works.length) {
+      box.innerHTML = '<div class="empty">暂时还没有作品哦～<br>点击首页「开发者模式」添加第一个作品吧！</div>';
+      updateSelBar();
+      return;
+    }
+
+    box.innerHTML = works.map((w, i) => `
+      <div class="card${w.id === selectedId ? ' selected' : ''}"
+           data-id="${w.id}"
+           style="animation-delay:${Math.min(i * 45, 500)}ms">
+        <span class="card-id">作品 #${w.id}</span>
+        <h3 class="card-name">${esc(w.name)}</h3>
+        <p class="card-text">${esc(w.text)}</p>
+      </div>
+    `).join('');
+
+    updateSelBar();
+  }
+
+  function updateSelBar() {
+    const bar = $('selbar');
+    const label = $('sel-name');
+    if (selectedId === null) {
+      bar.classList.remove('show');
+      label.textContent = '未选择作品';
+      return;
+    }
+    const w = works.find(x => x.id === selectedId);
+    label.textContent = w ? ('已选：' + w.name) : '未选择作品';
+    bar.classList.add('show');
+  }
+
+  /* =========================================================
+   *  视图切换
+   * ========================================================= */
+  function showView(which) {
+    $('view-home').classList.toggle('active', which === 'home');
+    $('view-list').classList.toggle('active', which === 'list');
+  }
+
+  /* =========================================================
+   *  确认框
+   * ========================================================= */
+  function confirmDialog(message) {
+    return new Promise((resolve) => {
+      const modal = $('modal-confirm');
+      $('confirm-msg').textContent = message;
+      modal.classList.add('show');
+
+      const ok = $('confirm-ok');
+      const cancel = $('confirm-cancel');
+
+      function done(v) {
+        modal.classList.remove('show');
+        ok.removeEventListener('click', onOk);
+        cancel.removeEventListener('click', onCancel);
+        resolve(v);
+      }
+      function onOk() { done(true); }
+      function onCancel() { done(false); }
+
+      ok.addEventListener('click', onOk);
+      cancel.addEventListener('click', onCancel);
+    });
+  }
+
+  /* =========================================================
+   *  全屏阅览 + 可拖动悬浮球
+   *  规则：按下时长 ≤ 400ms → 弹窗确认退出；否则视为拖动
+   * ========================================================= */
+  const fsEl = $('fullscreen');
+  const fsFrame = $('fs-frame');
+  const ball = $('fs-ball');
+
+  function openFullscreen(id) {
+    fsFrame.src = workUrl(id);
+    fsEl.classList.add('show');
+    ball.style.left = 'auto';
+    ball.style.top = 'auto';
+    ball.style.right = '24px';
+    ball.style.bottom = '40px';
+  }
+
+  function closeFullscreen() {
+    fsEl.classList.remove('show');
+    fsFrame.src = 'about:blank';
+  }
+
+  (function bindBallDrag() {
+    let drag = null;
+    const CLICK_THRESHOLD_MS = 400;
+
+    function onPointerDown(e) {
+      // 关键修复：不调用 e.preventDefault()，避免部分浏览器不派发 pointerup
+      const r = ball.getBoundingClientRect();
+      drag = {
+        startX: e.clientX,
+        startY: e.clientY,
+        left: r.left,
+        top: r.top,
+        startTime: Date.now(),
+        pointerId: e.pointerId
+      };
+      ball.style.right = 'auto';
+      ball.style.bottom = 'auto';
+      ball.style.left = r.left + 'px';
+      ball.style.top = r.top + 'px';
+      try { ball.setPointerCapture(e.pointerId); } catch (_) {}
+    }
+
+    function onPointerMove(e) {
+      if (!drag || e.pointerId !== drag.pointerId) return;
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      const w = ball.offsetWidth;
+      const h = ball.offsetHeight;
+      const nx = Math.min(Math.max(0, drag.left + dx), window.innerWidth - w);
+      const ny = Math.min(Math.max(0, drag.top + dy), window.innerHeight - h);
+      ball.style.left = nx + 'px';
+      ball.style.top = ny + 'px';
+    }
+
+    function finishDrag(e) {
+      if (!drag) return;
+      if (e && e.pointerId !== drag.pointerId) return;
+      const elapsed = Date.now() - drag.startTime;
+      const pid = drag.pointerId;
+      drag = null;
+      try { ball.releasePointerCapture(pid); } catch (_) {}
+
+      // ≤ 400ms → 视为点击，弹出退出确认
+      if (elapsed <= CLICK_THRESHOLD_MS) {
+        confirmDialog('确定要退出阅览吗？').then((ok) => {
+          if (ok) closeFullscreen();
+        });
+      }
+    }
+
+    // 关键修复：结束事件挂到 document 上，
+    // 防止 setPointerCapture 失败 / 触摸设备派发 pointercancel 时收不到 pointerup
+    ball.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', finishDrag);
+    document.addEventListener('pointercancel', finishDrag);
+  })();
+
+  /* =========================================================
+   *  窗口阅览
+   * ========================================================= */
+  function openWindowViewer(id, name) {
+    $('wv-title').textContent = name || ('作品 #' + id);
+    $('wv-frame').src = workUrl(id);
+    $('windowViewer').classList.add('show');
+  }
+  function closeWindowViewer() {
+    $('windowViewer').classList.remove('show');
+    $('wv-frame').src = 'about:blank';
+  }
+
+  /* =========================================================
+   *  GitHub API 写入
+   * ========================================================= */
+  function utf8ToB64(str) {
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    const CHUNK = 0x8000;
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+    }
+    return btoa(bin);
+  }
+
+  function encodePath(p) {
+    return p.split('/').map(encodeURIComponent).join('/');
+  }
+
+  async function ghPut(path, content, cfg) {
+    const url = 'https://api.github.com/repos/' +
+      encodeURIComponent(cfg.owner) + '/' + encodeURIComponent(cfg.repo) +
+      '/contents/' + encodePath(path);
+
+    const body = {
+      message: 'feat: add ' + path,
+      content: utf8ToB64(content),
+      branch: cfg.branch
+    };
+
+    const r = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'token ' + cfg.token,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!r.ok) {
+      let msg = r.status + ' ' + r.statusText;
+      try {
+        const j = await r.json();
+        if (j && j.message) msg = j.message;
+      } catch (_) {}
+      throw new Error(msg);
+    }
+    return r.json();
+  }
+
+  /* =========================================================
+   *  开发者模式
+   * ========================================================= */
+  function guessRepo() {
+    const host = location.hostname;
+    const parts = location.pathname.split('/').filter(Boolean);
+    let owner = '', repo = '';
+
+    if (/\.github\.io$/i.test(host)) {
+      owner = host.split('.')[0];
+      if (parts.length === 0 || /\.html?$/i.test(parts[0])) {
+        repo = owner + '.github.io';
+      } else {
+        repo = parts[0];
+      }
+    }
+    return { owner: owner, repo: repo };
+  }
+
+  function saveDevCfg(cfg) {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify({
+        token: cfg.token, owner: cfg.owner, repo: cfg.repo, branch: cfg.branch
+      }));
+    } catch (_) {}
+  }
+
+  function loadDevCfg() {
+    let cfg = null;
+    try { cfg = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (_) {}
+    const guess = guessRepo();
+
+    $('dev-token').value = (cfg && cfg.token) || '';
+    $('dev-owner').value = (cfg && cfg.owner) || guess.owner || '';
+    $('dev-repo').value = (cfg && cfg.repo) || guess.repo || '';
+    $('dev-branch').value = (cfg && cfg.branch) || 'main';
+  }
+
+  function collectDevCfg() {
+    return {
+      token: $('dev-token').value.trim(),
+      owner: $('dev-owner').value.trim(),
+      repo: $('dev-repo').value.trim(),
+      branch: $('dev-branch').value.trim() || 'main'
+    };
+  }
+
+  function bindDevCfgAutoSave() {
+    ['dev-token', 'dev-owner', 'dev-repo', 'dev-branch'].forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      el.addEventListener('input', () => saveDevCfg(collectDevCfg()));
+      el.addEventListener('change', () => saveDevCfg(collectDevCfg()));
+    });
+  }
+
+  async function devSubmit() {
+    const statusEl = $('dev-status');
+    const setStatus = (text, kind) => {
+      statusEl.textContent = text;
+      statusEl.className = 'status' + (kind === true ? ' ok' : kind === false ? ' err' : '');
+    };
+
+    const cfg = collectDevCfg();
+    const name = $('dev-name').value.trim();
+    const text = $('dev-text').value.trim();
+    const code = $('dev-code').value;
+
+    if (!cfg.token) { setStatus('⚠️ 请填写 GitHub Token', false); return; }
+    if (!cfg.owner || !cfg.repo) { setStatus('⚠️ 请填写 Owner / Repo', false); return; }
+    if (!name) { setStatus('⚠️ 请填写作品名称', false); return; }
+    if (!code.trim()) { setStatus('⚠️ 请填写作品代码', false); return; }
+
+    saveDevCfg(cfg);
+
+    const btn = $('dev-submit');
+    btn.disabled = true;
+
+    try {
+      setStatus('⏳ 正在计算新作品编号…');
+
+      const ids = await scanIds();
+      const maxId = ids.reduce((m, i) => Math.max(m, i), 0);
+      const newId = maxId + 1;
+
+      setStatus('⏳ 正在创建作品 #' + newId + ' 的本体文件…');
+      await ghPut(dirPath(CONFIG.htmlDir) + '/' + newId + '.html', code, cfg);
+
+      setStatus('⏳ 正在创建作品 #' + newId + ' 的名称文件…');
+      await ghPut(dirPath(CONFIG.nameDir) + '/' + newId + '-NAME.txt', name, cfg);
+
+      setStatus('⏳ 正在创建作品 #' + newId + ' 的简介文件…');
+      await ghPut(dirPath(CONFIG.textDir) + '/' + newId + '-TEXT.txt', text || '（暂无简介）', cfg);
+
+      works.push({ id: newId, name: name, text: text || '（暂无简介）' });
+      works.sort((a, b) => a.id - b.id);
+      renderWorks();
+
+      setStatus('✅ 作品 #' + newId + '「' + name + '」创建成功！（GitHub Pages 可能有 1 分钟左右的构建延迟）', true);
+
+      $('dev-name').value = '';
+      $('dev-text').value = '';
+      $('dev-code').value = '';
+    } catch (err) {
+      setStatus('❌ 创建失败：' + err.message, false);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  /* =========================================================
+   *  事件绑定
+   * ========================================================= */
+  function bindEvents() {
+    $('btn-list').addEventListener('click', () => {
+      showView('list');
+      loadWorks(true);
+    });
+    $('btn-dev').addEventListener('click', () => {
+      loadDevCfg();
+      $('modal-dev').classList.add('show');
+    });
+
+    $('btn-back').addEventListener('click', () => showView('home'));
+    $('btn-refresh').addEventListener('click', () => loadWorks(true));
+
+    $('works').addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if (!card) return;
+      const id = parseInt(card.dataset.id, 10);
+      selectedId = (selectedId === id) ? null : id;
+
+      document.querySelectorAll('.card').forEach((el) => {
+        el.classList.toggle('selected', parseInt(el.dataset.id, 10) === selectedId);
+      });
+      updateSelBar();
+    });
+
+    $('btn-read').addEventListener('click', () => {
+      if (selectedId === null) return;
+      const w = works.find(x => x.id === selectedId);
+      $('view-work-name').textContent = w
+        ? ('作品 #' + w.id + '「' + w.name + '」')
+        : ('作品 #' + selectedId);
+      $('modal-view').classList.add('show');
+    });
+
+    $('btn-read-cancel').addEventListener('click', () => $('modal-view').classList.remove('show'));
+    $('btn-read-full').addEventListener('click', () => {
+      $('modal-view').classList.remove('show');
+      if (selectedId !== null) openFullscreen(selectedId);
+    });
+    $('btn-read-window').addEventListener('click', () => {
+      $('modal-view').classList.remove('show');
+      if (selectedId === null) return;
+      const w = works.find(x => x.id === selectedId);
+      openWindowViewer(selectedId, w ? w.name : '');
+    });
+
+    $('wv-close').addEventListener('click', closeWindowViewer);
+    $('windowViewer').addEventListener('click', (e) => {
+      if (e.target === $('windowViewer')) closeWindowViewer();
+    });
+
+    $('dev-close').addEventListener('click', () => $('modal-dev').classList.remove('show'));
+    $('dev-submit').addEventListener('click', devSubmit);
+    bindDevCfgAutoSave();
+
+    ['modal-view', 'modal-dev'].forEach((id) => {
+      $(id).addEventListener('click', (e) => {
+        if (e.target === $(id)) $(id).classList.remove('show');
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if ($('windowViewer').classList.contains('show')) { closeWindowViewer(); return; }
+      if (fsEl.classList.contains('show')) {
+        confirmDialog('确定要退出阅览吗？').then((ok) => { if (ok) closeFullscreen(); });
+        return;
+      }
+      $('modal-view').classList.remove('show');
+      $('modal-dev').classList.remove('show');
+    });
+  }
+
+  /* =========================================================
+   *  启动
+   * ========================================================= */
+  function init() {
+    bindEvents();
+    loadDevCfg();
+    setupBgAnimationControl();
+
+    const fallback = setTimeout(hideLoading, 8000);
+    window.addEventListener('load', () => {
+      waitFonts().then(() => {
+        clearTimeout(fallback);
+        hideLoading();
+      });
+    });
+    if (document.readyState === 'complete') {
+      waitFonts().then(() => { clearTimeout(fallback); hideLoading(); });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
