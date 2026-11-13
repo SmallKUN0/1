@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#06070d" />
+<title>ohdep.us.ci · 一段 HTML，一个网址</title>
+<meta name="description" content="ohdep · HTML 部署器：粘贴完整 HTML 或选个模板，预览一下，就能拿到一条独立网址。好用到不该这么少人知道。" />
+<style>
+  :root{
+    --bg:#06070d; --ink:#f2f5fb; --muted:#8b93a7;
+    --line:rgba(255,255,255,.09); --glass:rgba(255,255,255,.045);
+    --mint:#7cf7d4; --violet:#a78bfa; --amber:#ffd6a5; --r:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","WenQuanYi Micro Hei",sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.65;overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+  ::selection{background:rgba(124,247,212,.28);color:#fff}
+
+  /* ---------- 氛围背景 ---------- */
+  .stage{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+  .grid{
+    position:absolute;inset:-20%;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 10%,transparent 78%);
+    -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 10%,transparent 78%);
+    opacity:.55;animation:drift 28s linear infinite;
+  }
+  @keyframes drift{to{transform:translate3d(64px,64px,0)}}
+  .aurora{position:absolute;border-radius:50%;filter:blur(90px);opacity:.42;will-change:transform}
+  .a1{width:60vmax;height:60vmax;left:-18vmax;top:-22vmax;background:radial-gradient(circle,#1d9e86,transparent 65%);animation:float1 18s ease-in-out infinite alternate}
+  .a2{width:52vmax;height:52vmax;right:-16vmax;top:6vmax;background:radial-gradient(circle,#5b3fc4,transparent 65%);animation:float2 22s ease-in-out infinite alternate}
+  .a3{width:44vmax;height:44vmax;left:28vmax;bottom:-24vmax;background:radial-gradient(circle,#b06a3c,transparent 66%);opacity:.24;animation:float1 26s ease-in-out infinite alternate-reverse}
+  @keyframes float1{to{transform:translate3d(8vmax,6vmax,0) scale(1.12)}}
+  @keyframes float2{to{transform:translate3d(-7vmax,9vmax,0) scale(1.08)}}
+  .noise{
+    position:absolute;inset:0;opacity:.16;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  }
+  .vignette{position:absolute;inset:0;background:radial-gradient(ellipse 90% 70% at 50% 40%,transparent 40%,rgba(3,4,9,.75) 100%)}
+
+  .wrap{width:min(1080px,100% - 40px);margin-inline:auto}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:26px 0 8px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.02em;font-size:15px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 5px rgba(124,247,212,.12),0 0 22px var(--mint);animation:pulse 2.6s ease-in-out infinite}
+  @keyframes pulse{50%{box-shadow:0 0 0 9px rgba(124,247,212,.05),0 0 30px var(--mint)}}
+  .tag{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:6px 12px;border-radius:999px;background:var(--glass);backdrop-filter:blur(10px);white-space:nowrap}
+
+  /* ---------- Hero ---------- */
+  .hero{text-align:center;padding:clamp(56px,11vw,108px) 0 44px}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:9px;font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--mint);border:1px solid rgba(124,247,212,.25);background:rgba(124,247,212,.06);
+    padding:8px 16px;border-radius:999px;margin-bottom:30px;
+  }
+  .eyebrow i{width:5px;height:5px;border-radius:50%;background:var(--mint);display:block}
+  h1{font-size:clamp(38px,8.4vw,80px);line-height:1.12;font-weight:800;letter-spacing:-.035em}
+  h1 .dim{color:#6f778c}
+  h1 .glow{
+    background:linear-gradient(100deg,var(--mint) 0%,#8fd8ff 42%,var(--violet) 78%,var(--amber) 110%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 60px rgba(124,247,212,.18);
+  }
+  .domain{
+    display:inline-block;margin-top:24px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:clamp(15px,3.4vw,21px);letter-spacing:.06em;color:var(--ink);
+    background:var(--glass);border:1px solid var(--line);padding:10px 20px;border-radius:12px;backdrop-filter:blur(12px);
+  }
+  .domain span{color:var(--mint)}
+  .lead{max-width:660px;margin:26px auto 0;color:var(--muted);font-size:clamp(15px,3.3vw,18px)}
+  .lead b{color:var(--ink);font-weight:600}
+  .cta-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:38px}
+  .btn{
+    position:relative;isolation:isolate;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    min-height:56px;padding:0 30px;border-radius:999px;font-size:16px;font-weight:700;cursor:pointer;
+    border:1px solid transparent;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
+  }
+  .btn-primary{
+    color:#04120e;background:linear-gradient(105deg,var(--mint),#a6f0e0 55%,#c9d8ff);
+    box-shadow:0 12px 40px rgba(124,247,212,.22),0 0 0 1px rgba(255,255,255,.35) inset;
+  }
+  .btn-primary::after{
+    content:"";position:absolute;inset:0;z-index:-1;
+    background:linear-gradient(105deg,transparent 20%,rgba(255,255,255,.75) 48%,transparent 76%);
+    transform:translateX(-130%);animation:shine 3.4s ease-in-out infinite;
+  }
+  @keyframes shine{0%,55%{transform:translateX(-130%)}85%,100%{transform:translateX(130%)}}
+  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 18px 52px rgba(124,247,212,.34)}
+  .btn-ghost{color:var(--ink);background:var(--glass);border-color:var(--line);backdrop-filter:blur(12px);font-family:inherit}
+  .btn-ghost:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.28)}
+  .btn:focus-visible{outline:2px solid var(--mint);outline-offset:4px}
+  .btn .arrow{transition:transform .25s ease}
+  .btn:hover .arrow{transform:translateX(4px)}
+  .hint{margin-top:18px;font-size:12.5px;color:#666e82}
+
+  /* ---------- 代码→网址 演示 ---------- */
+  .demo{
+    margin-top:clamp(48px,8vw,76px);display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:stretch;
+  }
+  .panel{
+    border:1px solid var(--line);border-radius:var(--r);background:rgba(9,11,19,.72);
+    backdrop-filter:blur(14px);overflow:hidden;text-align:left;
+  }
+  .panel .bar{
+    display:flex;align-items:center;gap:6px;padding:11px 14px;border-bottom:1px solid var(--line);
+    font-family:ui-monospace,monospace;font-size:11px;color:#6f778c;letter-spacing:.06em;
+  }
+  .panel .bar i{width:8px;height:8px;border-radius:50%;background:#3a3f4e;display:block}
+  .panel .bar i:nth-child(1){background:#ff7a6b}.panel .bar i:nth-child(2){background:#ffd06b}.panel .bar i:nth-child(3){background:#6bdda2}
+  .panel .bar span{margin-left:auto}
+  .code{padding:18px 18px 22px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.85;color:#aab3c7;white-space:pre;overflow-x:auto}
+  .code .t{color:var(--violet)}.code .a{color:var(--mint)}.code .s{color:var(--amber)}.code .c{color:#59617a}
+  .flow-arrow{display:grid;place-items:center;color:var(--mint);font-size:24px;text-shadow:0 0 20px rgba(124,247,212,.6)}
+  .url-panel{display:flex;flex-direction:column;justify-content:center;padding:24px 22px}
+  .url-panel small{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint)}
+  .url-panel .u{
+    display:block;margin-top:12px;font-family:ui-monospace,monospace;font-size:clamp(14px,3vw,19px);
+    color:var(--ink);word-break:break-all;
+  }
+  .url-panel .u em{color:var(--mint);font-style:normal}
+  .url-panel .alt{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-family:ui-monospace,monospace;font-size:12.5px;color:var(--muted);word-break:break-all}
+  .url-panel p{color:var(--muted);font-size:13px;margin-top:14px}
+
+  /* ---------- 数据条 ---------- */
+  .strip{
+    margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);
+    border:1px solid var(--line);border-radius:var(--r);
+    background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+    backdrop-filter:blur(14px);overflow:hidden;
+  }
+  .strip div{padding:22px 14px;text-align:center;border-right:1px solid var(--line)}
+  .strip div:last-child{border-right:0}
+  .strip strong{display:block;font-size:clamp(22px,5vw,32px);font-weight:800;letter-spacing:-.02em}
+  .strip small{display:block;margin-top:6px;color:var(--muted);font-size:12.5px;letter-spacing:.04em}
+  .strip .c1{color:var(--mint)}.strip .c2{color:var(--violet)}.strip .c3{color:var(--amber)}
+
+  /* ---------- 区块通用 ---------- */
+  section{padding:clamp(72px,12vw,116px) 0 0}
+  .sec-head{max-width:700px;margin-bottom:40px}
+  .kicker{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--mint);margin-bottom:14px}
+  h2{font-size:clamp(28px,6vw,46px);line-height:1.2;letter-spacing:-.03em;font-weight:800}
+  .sec-head p{color:var(--muted);margin-top:14px;font-size:clamp(14px,3.2vw,16.5px)}
+
+  /* ---------- 真实功能卡 ---------- */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .card{
+    position:relative;padding:24px 22px 26px;border-radius:var(--r);border:1px solid var(--line);
+    background:var(--glass);backdrop-filter:blur(14px);overflow:hidden;
+    transition:transform .35s ease,border-color .35s ease,background .35s ease;
+  }
+  .card::before{
+    content:"";position:absolute;inset:0;opacity:0;transition:opacity .35s ease;
+    background:radial-gradient(420px circle at var(--mx,50%) var(--my,0%),rgba(124,247,212,.10),transparent 60%);
+  }
+  .card:hover{transform:translateY(-6px);border-color:rgba(124,247,212,.28);background:rgba(255,255,255,.065)}
+  .card:hover::before{opacity:1}
+  .num{font-family:ui-monospace,monospace;font-size:12px;color:#5d657a;letter-spacing:.14em}
+  .ico{
+    width:44px;height:44px;border-radius:13px;display:grid;place-items:center;margin:16px 0 16px;font-size:21px;
+    background:linear-gradient(140deg,rgba(124,247,212,.16),rgba(167,139,250,.14));border:1px solid rgba(255,255,255,.1);
+  }
+  .card h3{font-size:18.5px;font-weight:700;letter-spacing:-.01em}
+  .card p{color:var(--muted);font-size:14px;margin-top:9px}
+  .card code{
+    font-family:ui-monospace,monospace;font-size:12.5px;color:var(--mint);
+    background:rgba(124,247,212,.08);padding:1px 5px;border-radius:5px;
+  }
+
+  /* ---------- 三步 + 场景 ---------- */
+  .story{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(28px,6vw,60px);align-items:start}
+  .steps{list-style:none;counter-reset:st}
+  .steps li{
+    counter-increment:st;position:relative;padding:0 0 26px 58px;border-left:1px solid var(--line);margin-left:16px;
+  }
+  .steps li:last-child{border-left-color:transparent;padding-bottom:0}
+  .steps li::before{
+    content:counter(st,decimal-leading-zero);position:absolute;left:-17px;top:0;
+    width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+    font-family:ui-monospace,monospace;font-size:12px;color:var(--mint);
+    background:#0b1018;border:1px solid rgba(124,247,212,.35);box-shadow:0 0 18px rgba(124,247,212,.12);
+  }
+  .steps h4{font-size:17px;font-weight:700;padding-top:5px}
+  .steps p{color:var(--muted);font-size:14.5px;margin-top:6px}
+  .quote{
+    border:1px solid var(--line);border-radius:var(--r);padding:clamp(26px,5vw,40px);
+    background:linear-gradient(150deg,rgba(167,139,250,.10),rgba(124,247,212,.05));backdrop-filter:blur(14px);
+  }
+  .quote h3{font-size:19px;font-weight:700}
+  .quote > p{color:var(--muted);font-size:14px;margin-top:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}
+  .chips span{
+    font-size:13px;padding:8px 13px;border-radius:999px;border:1px solid var(--line);
+    background:rgba(255,255,255,.04);color:var(--ink);
+  }
+  .quote .note{
+    margin-top:24px;padding-top:18px;border-top:1px solid var(--line);
+    font-size:13.5px;color:var(--muted);line-height:1.7;
+  }
+  .quote .note b{color:var(--amber);font-weight:600}
+
+  /* ---------- 为什么没人知道 ---------- */
+  .quiet{
+    margin-top:clamp(72px,12vw,116px);border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    padding:clamp(44px,7vw,68px) 0;text-align:center;
+  }
+  .quiet h2{font-size:clamp(25px,5.4vw,38px)}
+  .quiet p{max-width:620px;margin:18px auto 0;color:var(--muted);font-size:15.5px}
+  .quiet p b{color:var(--ink);font-weight:600}
+
+  /* ---------- 结尾 CTA ---------- */
+  .final{
+    margin-top:clamp(72px,12vw,120px);text-align:center;border:1px solid var(--line);border-radius:28px;
+    padding:clamp(44px,8vw,76px) 24px;
+    background:radial-gradient(600px circle at 50% 0%,rgba(124,247,212,.12),transparent 70%),linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.01));
+    backdrop-filter:blur(16px);
+  }
+  .final h2{font-size:clamp(28px,6.4vw,50px)}
+  .final p{color:var(--muted);margin:16px auto 30px;max-width:540px;font-size:15.5px}
+  .final .cta-row{margin-top:0}
+  footer{padding:44px 0 40px;text-align:center;color:#5d657a;font-size:12.5px;border-top:1px solid var(--line);margin-top:clamp(72px,12vw,120px)}
+  footer b{color:#8b93a7;font-weight:600}
+
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  .cards .card:nth-child(2),.cards .card:nth-child(5){transition-delay:.07s}
+  .cards .card:nth-child(3),.cards .card:nth-child(6){transition-delay:.14s}
+
+  @media (max-width:800px){
+    .demo{grid-template-columns:1fr;gap:10px}
+    .flow-arrow{transform:rotate(90deg);height:26px}
+    .cards{grid-template-columns:repeat(2,1fr)}
+    .story{grid-template-columns:1fr}
+  }
+  @media (max-width:460px){
+    .cards{grid-template-columns:1fr}
+    .cta-row{flex-direction:column}.btn{width:100%}
+    .strip{grid-template-columns:1fr}.strip div{border-right:0;border-bottom:1px solid var(--line)}
+    .strip div:last-child{border-bottom:0}
+    header{padding-top:20px}.tag{font-size:11px;padding:5px 10px}
+    .code{font-size:11.5px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+    .reveal{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="stage" aria-hidden="true">
+  <div class="grid"></div><div class="aurora a1"></div><div class="aurora a2"></div>
+  <div class="aurora a3"></div><div class="noise"></div><div class="vignette"></div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <div class="brand"><span class="dot"></span> ohdep · HTML 部署器</div>
+    <div class="tag">🤫 知道的人还不多</div>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <div class="hero">
+      <div class="eyebrow reveal"><i></i> Undiscovered Tool · 被低估的发布台</div>
+
+      <h1 class="reveal">
+        一段 HTML<br />
+        <span class="dim">变成一个</span> <span class="glow">网址</span><br />
+        <span class="dim">就这么快</span>
+      </h1>
+
+      <div class="domain reveal">ohdep<span>.us.ci</span></div>
+
+      <p class="lead reveal">
+        粘贴完整 HTML 代码，或者挑一个模板起步 —— <b>预览一下，发布，拿到独立链接</b>。<br />
+        它叫 <b>ohdep · HTML 部署器</b>，把「临时做个网页」压到最短，却安静到几乎没人知道它存在。
+      </p>
+
+      <div class="cta-row reveal">
+        <a class="btn btn-primary" href="https://ohdep.us.ci/" target="_blank" rel="noopener noreferrer">
+          一键打开 ohdep.us.ci <span class="arrow">↗</span>
+        </a>
+        <a class="btn btn-ghost" href="#what">先看看它能干嘛</a>
+      </div>
+      <p class="hint reveal">单击即在新标签页直达 · 不用绕路、不用先填表</p>
+    </div>
+
+    <!-- ============ 代码 → 网址 直观演示 ============ -->
+    <div class="demo reveal">
+      <div class="panel">
+        <div class="bar"><i></i><i></i><i></i><span>你的 HTML</span></div>
+        <pre class="code"><span class="c">&lt;!-- 粘贴完整代码 --&gt;</span>
+<span class="t">&lt;h1</span><span class="a"> style</span>=<span class="s">"color:#7cf7d4"</span><span class="t">&gt;</span>
+  Hello, world!
+<span class="t">&lt;/h1&gt;</span>
+<span class="t">&lt;p&gt;</span>一页临时公告<span class="t">&lt;/p&gt;</span></pre>
+      </div>
+
+      <div class="flow-arrow" aria-hidden="true">➜</div>
+
+      <div class="panel url-panel">
+        <small>发布后得到</small>
+        <span class="u"><em>xxx</em>.ohdep.us.ci</span>
+        <div class="alt">或者　/s/xxx.html</div>
+        <p>子域名模式给你一条独立网址；<br />路径模式挂在站点路径下，两种都行。</p>
+      </div>
+    </div>
+
+    <div class="strip reveal">
+      <div><strong class="c1">4</strong><small>个现成模板起步</small></div>
+      <div><strong class="c2">2</strong><small>种网址模式</small></div>
+      <div><strong class="c3">0</strong><small>次刷屏推广</small></div>
+    </div>
+
+    <!-- ============ 真实功能 ============ -->
+    <section id="what">
+      <div class="sec-head reveal">
+        <div class="kicker">What it actually does</div>
+        <h2>打开看了才知道，<br />它其实挺能干。</h2>
+        <p>下面每一条都来自站点界面本身，不是脑补的卖点。</p>
+      </div>
+
+      <div class="cards">
+        <article class="card reveal">
+          <div class="num">01 / PASTE</div><div class="ico">📋</div>
+          <h3>粘贴完整 HTML 就发</h3>
+          <p>主界面第一行就写着「粘贴完整 HTML 代码，或选一个模板快速开始」——直接把整页代码丢进去。</p>
+        </article>
+        <article class="card reveal">
+          <div class="num">02 / TEMPLATES</div><div class="ico">🧩</div>
+          <h3>四个模板，不用从零写</h3>
+          <p><b>空白页 · 公告页 · 跳转页 · 名片页</b>，四种常见需求一键起手，改几个字就能用。</p>
+        </article>
+        <article class="card reveal">
+          <div class="num">03 / PREVIEW</div><div class="ico">👁</div>
+          <h3>发布前先预览</h3>
+          <p>界面里有独立的「预览」入口，先确认长什么样，再决定要不要发出去。</p>
+        </article>
+        <article class="card reveal">
+          <div class="num">04 / URLS</div><div class="ico">🔗</div>
+          <h3>两种网址随你选</h3>
+          <p>子域名模式生成 <code>xxx.ohdep.us.ci</code>；路径模式为 <code>/s/xxx.html</code>。</p>
+        </article>
+        <article class="card reveal">
+          <div class="num">05 / CONTROL</div><div class="ico">⚙️</div>
+          <h3>发布设置不是摆设</h3>
+          <p>标题、<b>有效期</b>、<b>访问密码</b>、<b>收录控制</b> —— 什么时候失效、谁能看、要不要被搜到，都能定。</p>
+        </article>
+        <article class="card reveal">
+          <div class="num">06 / LOCAL</div><div class="ico">💾</div>
+          <h3>记录留在自己浏览器</h3>
+          <p>发布记录存在本机 <code>localStorage</code>，编辑、恢复与删除都从同一个页面操作。</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ 三步 + 场景 ============ -->
+    <section>
+      <div class="story">
+        <div class="reveal">
+          <div class="sec-head">
+            <div class="kicker">Three steps</div>
+            <h2>从上头到上线，三步。</h2>
+          </div>
+          <ol class="steps">
+            <li>
+              <h4>粘贴，或者挑模板</h4>
+              <p>完整 HTML 直接贴；懒得写就点空白页 / 公告页 / 跳转页 / 名片页。</p>
+            </li>
+            <li>
+              <h4>预览 + 设好发布项</h4>
+              <p>看一眼效果，再填标题、有效期、访问密码，决定要不要允许收录。</p>
+            </li>
+            <li>
+              <h4>发布，拿链接发出去</h4>
+              <p>选子域名或路径模式，得到一条能直接发给别人的网址。</p>
+            </li>
+          </ol>
+        </div>
+
+        <div class="quote reveal">
+          <h3>哪些时候会想起它</h3>
+          <p>不用为一个小需求专门开项目、找托管的那些时刻。</p>
+          <div class="chips">
+            <span>临时公告</span><span>活动落地页</span><span>跳转中转页</span>
+            <span>个人名片页</span><span>给客户看草稿</span><span>Demo 演示</span>
+            <span>一段 HTML 的分享链接</span>
+          </div>
+          <div class="note">
+            <b>一个小提醒：</b>发布记录保存在本机浏览器，换设备或清理浏览器数据不会自动同步，重要页面记得自己留一份源码。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 为什么没人知道 ============ -->
+    <div class="quiet reveal">
+      <div class="kicker">The quiet part</div>
+      <h2>所以，为什么没人知道？</h2>
+      <p>
+        因为它的首页只有一行标语、几个模板按钮和一个编辑框：<b>没有功能墙，没有定价页，也没有拉着你注册的引导</b>。<br />
+        它把该做的都做完了，就是没学会大声介绍自己。
+      </p>
+    </div>
+
+    <!-- ============ 结尾 CTA ============ -->
+    <div class="final reveal">
+      <div class="kicker">One click away</div>
+      <h2>别让它继续<br /><span class="glow">只被少数人知道</span></h2>
+      <p>不用先研究、不用收藏吃灰。点一下，亲手把一段 HTML 变成一条链接试试。</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://ohdep.us.ci/" target="_blank" rel="noopener noreferrer">
+          一键打开 ohdep.us.ci <span class="arrow">↗</span>
+        </a>
+        <button class="btn btn-ghost" id="copyBtn" type="button">复制网址</button>
+      </div>
+      <p class="hint" id="copyHint">点开若未加载，可复制域名到浏览器手动访问</p>
+    </div>
+  </main>
+
+  <footer>
+    <b>ohdep · HTML 部署器</b> · ohdep.us.ci<br />
+    一段 HTML，一个网址。知道的人，自然会来。
+  </footer>
+</div>
+
+<script>
+  const items = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    items.forEach(el => io.observe(el));
+  } else { items.forEach(el => el.classList.add('in')); }
+
+  if (window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('pointermove', e => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+        card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+      });
+    });
+  }
+
+  const btn = document.getElementById('copyBtn');
+  const hint = document.getElementById('copyHint');
+  btn.addEventListener('click', async () => {
+    const url = 'https://ohdep.us.ci/';
+    try { await navigator.clipboard.writeText(url); }
+    catch (_) {
+      const ta = document.createElement('textarea');
+      ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (_) {}
+      ta.remove();
+    }
+    btn.textContent = '✓ 已复制';
+    hint.textContent = '已复制 ' + url + '，粘贴到浏览器即可';
+    setTimeout(() => { btn.textContent = '复制网址'; }, 2200);
+  });
+</script>
+</body>
+</html>
