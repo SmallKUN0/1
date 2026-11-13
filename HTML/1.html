@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>坤坤作品集</title>
+
+<!-- 第三方字体 API（Google Fonts）：站酷快乐体 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+
+<style>
+/* ============ 基础 & 主题 ============ */
+:root{
+  --orange:#ff7a18;
+  --orange-2:#ff9f45;
+  --orange-deep:#ff5f00;
+  --orange-soft:#ffe3cc;
+  --paper:#fffdfa;
+  --ink:#3a2415;
+  --ink-2:#7a6656;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;margin:0;}
+body{
+  font-family:"ZCOOL KuaiLe","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  overflow:hidden;
+}
+.hidden{display:none !important;}
+
+/* ============ WebGL 画布 & SVG 背景层 ============ */
+#glcanvas{
+  position:fixed;inset:0;width:100%;height:100%;
+  z-index:0;display:block;pointer-events:none;
+}
+.bg-svg{
+  position:fixed;inset:0;width:100%;height:100%;
+  z-index:1;pointer-events:none;
+}
+.float-slow{animation:floatA 14s ease-in-out infinite;}
+.float-fast{animation:floatA 10s ease-in-out infinite reverse;}
+@keyframes floatA{
+  0%,100%{transform:translate(0,0) scale(1);}
+  50%{transform:translate(-40px,34px) scale(1.12);}
+}
+.spin-slow,.spin-rev{
+  transform-box:fill-box;transform-origin:center;
+  animation:spin var(--dur,40s) linear infinite;
+}
+.spin-rev{animation-direction:reverse;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.wave{stroke-dasharray:10 16;animation:dashMove 14s linear infinite;}
+.wave.w2{animation-duration:20s;animation-direction:reverse;}
+@keyframes dashMove{to{stroke-dashoffset:-260;}}
+.dots circle{animation:pulseDot 3.4s ease-in-out infinite;transform-box:fill-box;}
+.dots circle:nth-child(2){animation-delay:-1.1s;}
+.dots circle:nth-child(3){animation-delay:-2.2s;}
+.dots circle:nth-child(4){animation-delay:-0.6s;}
+.dots circle:nth-child(5){animation-delay:-1.7s;}
+@keyframes pulseDot{
+  0%,100%{opacity:.28;transform:translateY(0);}
+  50%{opacity:1;transform:translateY(-16px);}
+}
+
+/* ============ 字体加载中遮罩 ============ */
+#boot{
+  position:fixed;inset:0;z-index:9999;background:var(--paper);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  transition:opacity .55s ease, visibility .55s ease;
+}
+#boot.done{opacity:0;visibility:hidden;}
+.spinner{
+  width:58px;height:58px;border-radius:50%;
+  border:5px solid var(--orange-soft);border-top-color:var(--orange);
+  animation:spin 1s linear infinite;
+}
+#bootText{font-size:20px;color:var(--orange);letter-spacing:.08em;}
+#bootSub{font-size:13px;color:var(--ink-2);}
+
+/* ============ 视图容器 ============ */
+.view{position:fixed;inset:0;z-index:2;display:flex;flex-direction:column;}
+
+/* ---- 首页 ---- */
+#homeView{align-items:center;justify-content:center;padding:28px;text-align:center;}
+.hero{max-width:900px;animation:heroIn .9s cubic-bezier(.2,.9,.2,1) both;}
+@keyframes heroIn{
+  from{opacity:0;transform:translateY(26px) scale(.98);}
+  to{opacity:1;transform:none;}
+}
+.badge{
+  display:inline-block;padding:6px 20px;border-radius:999px;
+  background:rgba(255,255,255,.7);
+  border:1.5px solid var(--orange-soft);
+  color:var(--orange-deep);font-size:15px;letter-spacing:.28em;
+  box-shadow:0 6px 18px rgba(255,122,24,.12);
+  backdrop-filter:blur(4px);
+  margin-bottom:22px;
+}
+.title{
+  margin:0 0 18px;
+  font-size:clamp(40px,9vw,96px);
+  line-height:1.1;
+  letter-spacing:.06em;
+  background:linear-gradient(120deg,#ff8a2b 0%,#ff5f00 45%,#ffb26b 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 10px 26px rgba(255,122,24,.28));
+  animation:titleFloat 6s ease-in-out infinite;
+}
+@keyframes titleFloat{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-8px);}
+}
+.subtitle{
+  margin:0 auto 40px;
+  font-size:clamp(15px,2.4vw,21px);
+  color:var(--ink-2);letter-spacing:.06em;line-height:1.7;
+}
+
+/* ---- 通用按钮 ---- */
+.btn{
+  font-family:inherit;font-size:18px;color:#fff;border:none;cursor:pointer;
+  padding:15px 40px;border-radius:999px;letter-spacing:.06em;
+  background:linear-gradient(135deg,#ff9f45,#ff5f00);
+  box-shadow:0 12px 26px rgba(255,95,0,.34), inset 0 -3px 0 rgba(0,0,0,.08);
+  transition:transform .22s ease, box-shadow .22s ease, opacity .2s ease;
+}
+.btn:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 18px 34px rgba(255,95,0,.42), inset 0 -3px 0 rgba(0,0,0,.08);}
+.btn:active{transform:translateY(0) scale(.98);}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn.small{font-size:16px;padding:11px 30px;}
+
+/* ---- 列表页 ---- */
+#listView{background:linear-gradient(180deg, rgba(255,253,250,.92), rgba(255,246,238,.95));}
+.list-head{
+  display:flex;align-items:center;gap:18px;
+  padding:16px 22px;
+  background:rgba(255,253,250,.8);
+  border-bottom:1.5px solid rgba(255,122,24,.16);
+  backdrop-filter:blur(8px);
+  flex:0 0 auto;
+}
+.list-head h2{margin:0;font-size:24px;color:var(--orange-deep);letter-spacing:.08em;}
+.back-btn{
+  font-family:inherit;font-size:16px;cursor:pointer;
+  color:var(--orange-deep);background:#fff;
+  border:1.5px solid var(--orange-soft);border-radius:999px;
+  padding:9px 20px;transition:.2s;
+}
+.back-btn:hover{background:var(--orange-soft);transform:translateX(-2px);}
+.list-scroll{
+  flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;
+  padding:22px 22px 130px;
+  scroll-behavior:smooth;
+}
+.list-scroll::-webkit-scrollbar{width:10px;}
+.list-scroll::-webkit-scrollbar-thumb{
+  background:linear-gradient(#ffb26b,#ff7a18);border-radius:99px;
+  border:2px solid transparent;background-clip:content-box;
+}
+.list-scroll::-webkit-scrollbar-track{background:transparent;}
+
+#workList{max-width:900px;margin:0 auto;}
+.card{
+  display:flex;gap:16px;align-items:flex-start;
+  background:#fff;
+  border:2px solid var(--orange-soft);
+  border-radius:20px;
+  padding:16px 20px;margin-bottom:14px;
+  cursor:pointer;
+  box-shadow:0 6px 18px rgba(255,122,24,.08);
+  transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+  animation:cardIn .45s cubic-bezier(.2,.9,.2,1) both;
+}
+@keyframes cardIn{
+  from{opacity:0;transform:translateY(18px);}
+  to{opacity:1;transform:none;}
+}
+.card:hover{transform:translateY(-3px);border-color:var(--orange-2);box-shadow:0 14px 30px rgba(255,122,24,.18);}
+.card.active{
+  border-color:var(--orange);
+  background:linear-gradient(135deg,#fff 0%,#fff4ea 100%);
+  box-shadow:0 16px 34px rgba(255,122,24,.26);
+}
+.card-index{
+  flex:0 0 auto;min-width:54px;font-size:22px;font-weight:700;
+  color:var(--orange-2);letter-spacing:.02em;padding-top:2px;
+}
+.card-body{flex:1 1 auto;min-width:0;}
+.card-title{margin:0 0 6px;font-size:20px;color:#e85d00;letter-spacing:.04em;word-break:break-word;}
+.card-text{
+  margin:0;font-size:14px;line-height:1.7;color:var(--ink-2);
+  white-space:pre-wrap;word-break:break-word;font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+}
+.empty{
+  text-align:center;color:var(--ink-2);font-size:16px;
+  padding:60px 20px;letter-spacing:.06em;
+}
+
+/* 底部选择栏 */
+.select-bar{
+  position:absolute;left:0;right:0;bottom:0;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:14px 24px;
+  background:rgba(255,253,250,.92);
+  border-top:1.5px solid rgba(255,122,24,.18);
+  backdrop-filter:blur(10px);
+  box-shadow:0 -8px 24px rgba(255,122,24,.08);
+}
+.sel-name{
+  font-size:16px;color:var(--ink-2);letter-spacing:.04em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.sel-name.on{color:var(--orange-deep);}
+
+/* ============ 弹窗（选择阅览方式） ============ */
+.modal{
+  position:fixed;inset:0;z-index:10002;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(58,36,21,.42);backdrop-filter:blur(5px);
+  animation:fadeIn .22s ease both;
+}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.modal-box{
+  width:min(440px,92vw);
+  background:var(--paper);
+  border:2px solid var(--orange-soft);
+  border-radius:24px;
+  padding:28px 26px 22px;
+  text-align:center;
+  box-shadow:0 30px 70px rgba(0,0,0,.28);
+  animation:popIn .3s cubic-bezier(.2,.9,.2,1) both;
+}
+@keyframes popIn{from{opacity:0;transform:scale(.92) translateY(14px);}to{opacity:1;transform:none;}}
+.modal-box h3{margin:0 0 8px;font-size:23px;color:var(--orange-deep);letter-spacing:.06em;}
+.modal-sub{
+  margin:0 0 22px;font-size:15px;color:var(--ink-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.mode-btns{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+.mode-btn{
+  font-family:inherit;font-size:17px;cursor:pointer;
+  padding:14px 18px;border-radius:16px;
+  border:2px solid var(--orange-soft);
+  background:#fff;color:var(--orange-deep);
+  transition:.2s;letter-spacing:.06em;
+}
+.mode-btn:hover{background:linear-gradient(135deg,#fff4ea,#ffe9d8);border-color:var(--orange-2);transform:translateY(-2px);}
+.cancel-btn{
+  font-family:inherit;font-size:15px;cursor:pointer;
+  background:none;border:none;color:var(--ink-2);padding:8px 18px;letter-spacing:.06em;
+}
+.cancel-btn:hover{color:var(--orange-deep);}
+
+/* ============ 全屏 iframe 阅览 ============ */
+#fullScreen{
+  position:fixed;inset:0;z-index:10000;background:#fff;
+  animation:fadeIn .25s ease both;
+}
+#fullFrame{width:100%;height:100%;border:0;display:block;background:#fff;}
+
+/* 可拖动退出悬浮球 */
+#ball{
+  position:fixed;width:60px;height:60px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#ff9f45,#ff5f00);
+  color:#fff;font-size:22px;line-height:1;font-family:system-ui,sans-serif;
+  box-shadow:0 12px 28px rgba(255,95,0,.45), 0 0 0 4px rgba(255,255,255,.6);
+  cursor:grab;touch-action:none;user-select:none;z-index:10001;
+  transition:box-shadow .2s ease, transform .2s ease;
+}
+#ball:hover{box-shadow:0 16px 34px rgba(255,95,0,.55), 0 0 0 6px rgba(255,255,255,.75);}
+#ball:active{cursor:grabbing;}
+
+/* ============ 窗口展示 ============ */
+#winMode{
+  position:fixed;inset:0;z-index:10000;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(58,36,21,.38);backdrop-filter:blur(4px);
+  animation:fadeIn .25s ease both;
+}
+.win{
+  width:min(1120px,94vw);height:min(780px,88vh);
+  display:flex;flex-direction:column;
+  background:#fff;border:2px solid #ffd0a8;border-radius:22px;overflow:hidden;
+  box-shadow:0 34px 90px rgba(0,0,0,.36);
+  animation:popIn .3s cubic-bezier(.2,.9,.2,1) both;
+  will-change:transform;
+}
+.win-head{
+  flex:0 0 auto;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 16px;
+  background:linear-gradient(135deg,#ff9f45,#ff5f00);
+  color:#fff;cursor:move;user-select:none;touch-action:none;
+}
+.win-title{
+  font-size:16px;letter-spacing:.06em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.win-close{
+  flex:0 0 auto;
+  width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(255,255,255,.22);color:#fff;font-size:15px;line-height:1;
+  font-family:system-ui,sans-serif;transition:.2s;
+}
+.win-close:hover{background:rgba(255,255,255,.42);transform:rotate(90deg);}
+#winFrame{flex:1 1 auto;width:100%;border:0;background:#fff;}
+
+/* 小屏适配 */
+@media (max-width:520px){
+  .card{padding:14px 15px;gap:12px;}
+  .card-index{min-width:42px;font-size:18px;}
+  .card-title{font-size:17px;}
+  .select-bar{padding:12px 16px;}
+  .btn.small{font-size:15px;padding:10px 22px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ WebGL 背景画布 ============ -->
+<canvas id="glcanvas"></canvas>
+
+<!-- ============ SVG 橙白装饰背景 ============ -->
+<svg class="bg-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <radialGradient id="glowA" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffb26b" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ffb26b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff7a18" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#ff7a18" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="strokeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff7a18"/>
+      <stop offset="100%" stop-color="#ffc38a"/>
+    </linearGradient>
+  </defs>
+
+  <g class="float-slow"><circle cx="1180" cy="170" r="240" fill="url(#glowA)"/></g>
+  <g class="float-fast"><circle cx="240" cy="740" r="300" fill="url(#glowB)"/></g>
+
+  <g class="spin-slow" style="--dur:42s">
+    <circle cx="1240" cy="190" r="140" fill="none" stroke="url(#strokeGrad)"
+            stroke-width="2" stroke-dasharray="14 22" opacity="0.85"/>
+  </g>
+  <g class="spin-rev" style="--dur:56s">
+    <circle cx="170" cy="690" r="100" fill="none" stroke="#ff9f45"
+            stroke-width="2" stroke-dasharray="8 16" opacity="0.7"/>
+  </g>
+  <g class="spin-slow" style="--dur:74s">
+    <circle cx="720" cy="450" r="330" fill="none" stroke="#ffd6b0"
+            stroke-width="1.5" stroke-dasharray="3 18" opacity="0.65"/>
+  </g>
+
+  <path class="wave"
+        d="M-60,640 C 200,540 380,760 660,660 C 940,560 1160,700 1500,590"
+        fill="none" stroke="#ffb26b" stroke-width="3" opacity="0.55"/>
+  <path class="wave w2"
+        d="M-60,730 C 240,650 420,845 720,745 C 1020,645 1200,785 1500,695"
+        fill="none" stroke="#ff9f45" stroke-width="2" opacity="0.35"/>
+
+  <g class="dots">
+    <circle cx="320" cy="200" r="7" fill="#ff9f45" opacity="0.85"/>
+    <circle cx="1080" cy="700" r="9" fill="#ff7a18" opacity="0.6"/>
+    <circle cx="900" cy="140" r="5" fill="#ffc38a" opacity="0.9"/>
+    <circle cx="150" cy="330" r="6" fill="#ffb26b" opacity="0.8"/>
+    <circle cx="1320" cy="520" r="8" fill="#ff8a2b" opacity="0.55"/>
+  </g>
+</svg>
+
+<!-- ============ 字体加载提示 ============ -->
+<div id="boot">
+  <div class="spinner"></div>
+  <div id="bootText">字体加载中…</div>
+  <div id="bootSub">正在通过第三方字体 API 获取站酷快乐体</div>
+</div>
+
+<!-- ============ 首页 ============ -->
+<main class="view" id="homeView">
+  <div class="hero">
+    <div class="badge">✦ 作 品 集 ✦</div>
+    <h1 class="title">坤坤作品集</h1>
+    <p class="subtitle">HT小坤坤ML为大家创建的作品名单</p>
+    <button class="btn" id="btnOpenList">查看作品列表</button>
+  </div>
+</main>
+
+<!-- ============ 列表页 ============ -->
+<section class="view hidden" id="listView">
+  <header class="list-head">
+    <button class="back-btn" id="btnBack">← 返回</button>
+    <h2>作品列表</h2>
+  </header>
+  <div class="list-scroll" id="listScroll">
+    <div id="workList"></div>
+    <p class="empty" id="listEmpty">正在读取作品…</p>
+  </div>
+  <div class="select-bar">
+    <span class="sel-name" id="selName">未选择作品</span>
+    <button class="btn small" id="btnRead" disabled>阅览</button>
+  </div>
+</section>
+
+<!-- ============ 选择阅览方式 ============ -->
+<div class="modal hidden" id="modeModal">
+  <div class="modal-box">
+    <h3>选择阅览方式</h3>
+    <p class="modal-sub" id="modeWorkName"></p>
+    <div class="mode-btns">
+      <button class="mode-btn" data-mode="full">全屏 iframe 阅览</button>
+      <button class="mode-btn" data-mode="window">窗口展示</button>
+    </div>
+    <button class="cancel-btn" data-action="cancel">取消</button>
+  </div>
+</div>
+
+<!-- ============ 全屏阅览（含可拖动退出悬浮球） ============ -->
+<div id="fullScreen" class="hidden">
+  <iframe id="fullFrame" title="作品全屏阅览"></iframe>
+  <div id="ball" title="单击退出全屏">✕</div>
+</div>
+
+<!-- ============ 窗口展示 ============ -->
+<div id="winMode" class="hidden">
+  <div class="win" id="winBox">
+    <div class="win-head" id="winHead">
+      <span class="win-title" id="winTitle">作品</span>
+      <button class="win-close" id="winClose" title="关闭">✕</button>
+    </div>
+    <iframe id="winFrame" title="作品窗口阅览"></iframe>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   配置区
+   ========================================================= */
+const GROUP      = 'group1';   // 待读取文件组（对应 /HTML/group1/... 等目录）
+const MAX_ID     = 200;        // 最大探测作品编号
+const MISS_LIMIT = 3;          // 连续缺失多少个编号后停止探测
+
+const URL_OF = {
+  html: n => `/HTML/${encodeURIComponent(GROUP)}/${n}.html`,
+  name: n => `/HTML-NAME/${encodeURIComponent(GROUP)}/${n}-NAME.txt`,
+  text: n => `/HTML-TEXT/${encodeURIComponent(GROUP)}/${n}-TEXT.txt`
+};
+
+/* =========================================================
+   DOM 引用
+   ========================================================= */
+const els = {
+  boot:        document.getElementById('boot'),
+  bootText:    document.getElementById('bootText'),
+  bootSub:     document.getElementById('bootSub'),
+  homeView:    document.getElementById('homeView'),
+  listView:    document.getElementById('listView'),
+  workList:    document.getElementById('workList'),
+  listScroll:  document.getElementById('listScroll'),
+  listEmpty:   document.getElementById('listEmpty'),
+  btnOpenList: document.getElementById('btnOpenList'),
+  btnBack:     document.getElementById('btnBack'),
+  selName:     document.getElementById('selName'),
+  btnRead:     document.getElementById('btnRead'),
+  modeModal:   document.getElementById('modeModal'),
+  modeWorkName:document.getElementById('modeWorkName'),
+  fullScreen:  document.getElementById('fullScreen'),
+  fullFrame:   document.getElementById('fullFrame'),
+  ball:        document.getElementById('ball'),
+  winMode:     document.getElementById('winMode'),
+  winBox:      document.getElementById('winBox'),
+  winHead:     document.getElementById('winHead'),
+  winTitle:    document.getElementById('winTitle'),
+  winClose:    document.getElementById('winClose'),
+  winFrame:    document.getElementById('winFrame')
+};
+
+const state = {
+  works: [],
+  selected: null,
+  listLoaded: false
+};
+
+/* =========================================================
+   1. 字体加载（第三方 API + 加载中提示）
+   ========================================================= */
+function bootFonts(){
+  const family = '"ZCOOL KuaiLe"';
+
+  const loading = (async () => {
+    if (!document.fonts || !document.fonts.load) return;
+    await Promise.all([
+      document.fonts.load(`400 32px ${family}`, '坤坤作品集'),
+      document.fonts.load(`400 16px ${family}`, '作品列表阅览')
+    ]);
+    if (document.fonts.ready) await document.fonts.ready;
+  })();
+
+  const timeout = new Promise(resolve => setTimeout(resolve, 7000));
+
+  Promise.race([loading, timeout])
+    .then(() => {
+      const ok = document.fonts && document.fonts.check
+        ? document.fonts.check(`16px ${family}`, '坤坤')
+        : true;
+      if (!ok){
+        els.bootText.textContent = '字体加载较慢，已启用备用字体';
+        els.bootSub.textContent  = '不影响正常浏览';
+        return new Promise(r => setTimeout(r, 900));
+      }
+    })
+    .catch(() => {
+      els.bootText.textContent = '字体获取失败，已启用备用字体';
+      return new Promise(r => setTimeout(r, 900));
+    })
+    .finally(() => {
+      els.boot.classList.add('done');
+      setTimeout(() => els.boot.remove(), 700);
+    });
+}
+
+/* =========================================================
+   2. WebGL 2D 背景（流动橙色光斑）
+   ========================================================= */
+function initGL(){
+  const canvas = document.getElementById('glcanvas');
+  const gl = canvas.getContext('webgl', {
+    alpha: false, antialias: false, depth: false, stencil: false,
+    powerPreference: 'low-power'
+  }) || canvas.getContext('experimental-webgl');
+
+  if (!gl){ canvas.remove(); return; }
+
+  const VERT = `
+    attribute vec2 a_pos;
+    void main(){
+      gl_Position = vec4(a_pos, 0.0, 1.0);
+    }
+  `;
+
+  const FRAG = `
+    precision mediump float;
+    uniform vec2  u_res;
+    uniform float u_time;
+
+    float blob(vec2 p, vec2 c, float r){
+      return smoothstep(r, r * 0.10, distance(p, c));
+    }
+
+    void main(){
+      float aspect = u_res.x / u_res.y;
+      vec2 p = vec2((gl_FragCoord.x / u_res.x) * aspect,
+                     gl_FragCoord.y / u_res.y);
+      float t = u_time;
+
+      vec3 base   = vec3(1.000, 0.992, 0.976);
+      vec3 orange = vec3(1.000, 0.560, 0.160);
+      vec3 deep   = vec3(1.000, 0.400, 0.020);
+
+      vec2 c1 = vec2(0.30 * aspect + 0.12 * sin(t * 0.40),
+                     0.72 + 0.10 * cos(t * 0.33));
+      vec2 c2 = vec2(0.85 * aspect + 0.10 * cos(t * 0.29),
+                     0.25 + 0.09 * sin(t * 0.47));
+      vec2 c3 = vec2(0.55 * aspect + 0.18 * sin(t * 0.23 + 2.0),
+                     0.55 + 0.16 * cos(t * 0.31 + 1.0));
+
+      float a1 = blob(p, c1, 0.55) * 0.55;
+      float a2 = blob(p, c2, 0.62) * 0.42;
+      float a3 = blob(p, c3, 0.42) * 0.30;
+
+      float a = clamp(a1 + a2 + a3, 0.0, 0.90);
+      vec3 col = mix(base, orange, a);
+      col = mix(col, deep, a * a * 0.35);
+
+      float hl = blob(p, vec2(0.20 * aspect, 0.86), 0.34) * 0.50;
+      col = mix(col, vec3(1.0), hl);
+
+      float stripes = sin((p.x + p.y) * 24.0 - t * 0.8) * 0.5 + 0.5;
+      col -= stripes * 0.012;
+
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `;
+
+  function compile(type, src){
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+      console.warn(gl.getShaderInfoLog(s));
+      gl.deleteShader(s);
+      return null;
+    }
+    return s;
+  }
+
+  const vs = compile(gl.VERTEX_SHADER, VERT);
+  const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+  if (!vs || !fs) return;
+
+  const program = gl.createProgram();
+  gl.attachShader(program, vs);
+  gl.attachShader(program, fs);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)){
+    console.warn(gl.getProgramInfoLog(program));
+    return;
+  }
+  gl.useProgram(program);
+
+  const buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    -1,-1,  1,-1, -1, 1,
+    -1, 1,  1,-1,  1, 1
+  ]), gl.STATIC_DRAW);
+
+  const aPos = gl.getAttribLocation(program, 'a_pos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const uRes  = gl.getUniformLocation(program, 'u_res');
+  const uTime = gl.getUniformLocation(program, 'u_time');
+
+  function render(ms){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.floor(window.innerWidth  * dpr);
+    const h = Math.floor(window.innerHeight * dpr);
+    if (canvas.width !== w || canvas.height !== h){
+      canvas.width = w; canvas.height = h;
+      gl.viewport(0, 0, w, h);
+    }
+    gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.uniform1f(uTime, ms * 0.001);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+}
+
+/* =========================================================
+   3. 网络读取工具
+   ========================================================= */
+async function fetchText(url){
+  try{
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return '';
+    return (await res.text()).trim();
+  }catch(e){
+    return '';
+  }
+}
+
+/* =========================================================
+   4. 作品列表读取与渲染
+   ========================================================= */
+async function loadWorks(){
+  els.listEmpty.classList.remove('hidden');
+  els.listEmpty.textContent = '正在读取作品数据…';
+
+  const works = [];
+  let miss = 0;
+
+  for (let n = 1; n <= MAX_ID && miss < MISS_LIMIT; n++){
+    const name = await fetchText(URL_OF.name(n));
+
+    if (!name){ miss++; continue; }
+    miss = 0;
+
+    const text = await fetchText(URL_OF.text(n));
+
+    const work = { id: n, name, desc: text || '（暂无简介）' };
+    works.push(work);
+    addCard(work, works.length - 1);
+  }
+
+  state.works = works;
+
+  if (works.length === 0){
+    els.listEmpty.textContent = '未找到作品，请检查 /HTML、/HTML-NAME、/HTML-TEXT 目录配置。';
+    els.listEmpty.classList.remove('hidden');
+  }else{
+    els.listEmpty.classList.add('hidden');
+  }
+}
+
+function addCard(work, index){
+  const card = document.createElement('article');
+  card.className = 'card';
+  card.dataset.id = String(work.id);
+  card.style.animationDelay = Math.min(index * 40, 400) + 'ms';
+  card.innerHTML = `
+    <div class="card-index">${String(work.id).padStart(2, '0')}</div>
+    <div class="card-body">
+      <h3 class="card-title"></h3>
+      <p class="card-text"></p>
+    </div>
+  `;
+  card.querySelector('.card-title').textContent = work.name;
+  card.querySelector('.card-text').textContent  = work.desc;
+  els.workList.appendChild(card);
+}
+
+/* =========================================================
+   5. 视图切换
+   ========================================================= */
+function showView(name){
+  els.homeView.classList.toggle('hidden', name !== 'home');
+  els.listView.classList.toggle('hidden', name !== 'list');
+  if (name === 'home') document.title = '坤坤作品集';
+  if (name === 'list') document.title = '作品列表 · 坤坤作品集';
+}
+
+/* =========================================================
+   6. 选择 & 阅览
+   ========================================================= */
+function selectWork(work, cardEl){
+  state.selected = work;
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  cardEl.classList.add('active');
+  els.selName.textContent = '已选择：' + work.name;
+  els.selName.classList.add('on');
+  els.btnRead.disabled = false;
+}
+
+async function getWorkHtml(id){
+  try{
+    const res = await fetch(URL_OF.html(id), { cache: 'no-store' });
+    if (!res.ok) return '';
+    return await res.text();
+  }catch(e){
+    return '';
+  }
+}
+
+/* 把作品 HTML 注入 iframe（fetch 读取后注入，并补 <base> 保证相对路径可用） */
+function loadIntoFrame(frame, work, html){
+  if (html){
+    const absUrl = new URL(URL_OF.html(work.id), location.href).href;
+    const baseTag = `<base href="${absUrl}">`;
+    let doc = html;
+    if (/<head[^>]*>/i.test(doc)){
+      doc = doc.replace(/<head[^>]*>/i, m => m + baseTag);
+    }else{
+      doc = baseTag + doc;
+    }
+    frame.removeAttribute('src');
+    frame.srcdoc = doc;
+  }else{
+    // 兜底：直接以 URL 方式加载
+    frame.removeAttribute('srcdoc');
+    frame.src = URL_OF.html(work.id);
+  }
+}
+
+const LOADING_HTML = `<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{height:100%;margin:0}
+body{display:flex;align-items:center;justify-content:center;
+font-family:system-ui,"Microsoft YaHei",sans-serif;
+color:#e85d00;background:#fffdfa;font-size:17px;letter-spacing:.1em}</style>
+</head><body>正在加载作品…</body></html>`;
+
+async function showWork(work, mode){
+  if (mode === 'full'){
+    els.fullScreen.classList.remove('hidden');
+    resetBallPosition();
+    els.fullFrame.srcdoc = LOADING_HTML;
+    const html = await getWorkHtml(work.id);
+    loadIntoFrame(els.fullFrame, work, html);
+  }else{
+    els.winMode.classList.remove('hidden');
+    els.winTitle.textContent = work.name;
+    resetWinPosition();
+    els.winFrame.srcdoc = LOADING_HTML;
+    const html = await getWorkHtml(work.id);
+    loadIntoFrame(els.winFrame, work, html);
+  }
+}
+
+function closeFull(){
+  els.fullScreen.classList.add('hidden');
+  els.fullFrame.removeAttribute('srcdoc');
+  els.fullFrame.removeAttribute('src');
+}
+
+function closeWin(){
+  els.winMode.classList.add('hidden');
+  els.winFrame.removeAttribute('srcdoc');
+  els.winFrame.removeAttribute('src');
+}
+
+/* =========================================================
+   7. 全屏悬浮球（可拖动 + 单击确认退出）
+   ========================================================= */
+function resetBallPosition(){
+  const size = 60;
+  const x = window.innerWidth  - size - 26;
+  const y = window.innerHeight - size - 26;
+  els.ball.style.left = Math.max(8, x) + 'px';
+  els.ball.style.top  = Math.max(8, y) + 'px';
+}
+
+let ballDrag = null;
+
+els.ball.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  const rect = els.ball.getBoundingClientRect();
+  ballDrag = {
+    startX: e.clientX,
+    startY: e.clientY,
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top,
+    moved: false
+  };
+  try{ els.ball.setPointerCapture(e.pointerId); }catch(err){}
+});
+
+els.ball.addEventListener('pointermove', e => {
+  if (!ballDrag) return;
+  const dx = e.clientX - ballDrag.startX;
+  const dy = e.clientY - ballDrag.startY;
+  if (Math.hypot(dx, dy) > 6) ballDrag.moved = true;
+
+  if (ballDrag.moved){
+    const size = els.ball.offsetWidth || 60;
+    let x = e.clientX - ballDrag.offsetX;
+    let y = e.clientY - ballDrag.offsetY;
+    x = Math.min(Math.max(8, x), window.innerWidth  - size - 8);
+    y = Math.min(Math.max(8, y), window.innerHeight - size - 8);
+    els.ball.style.left = x + 'px';
+    els.ball.style.top  = y + 'px';
+  }
+});
+
+els.ball.addEventListener('pointerup', e => {
+  if (!ballDrag) return;
+  const wasMoved = ballDrag.moved;
+  ballDrag = null;
+  try{ els.ball.releasePointerCapture(e.pointerId); }catch(err){}
+  if (!wasMoved){
+    // 单击（非拖动）→ 确认退出
+    if (window.confirm('确定要退出全屏阅览吗？')) closeFull();
+  }
+});
+
+els.ball.addEventListener('pointercancel', () => { ballDrag = null; });
+
+/* =========================================================
+   8. 窗口展示拖动
+   ========================================================= */
+let winDrag = null;
+const winPos = { x: 0, y: 0 };
+
+function resetWinPosition(){
+  winPos.x = 0; winPos.y = 0;
+  els.winBox.style.transform = 'translate(0px, 0px)';
+}
+
+els.winHead.addEventListener('pointerdown', e => {
+  if (e.target.closest('#winClose')) return;
+  const rect = els.winBox.getBoundingClientRect();
+  winDrag = {
+    startX: e.clientX,
+    startY: e.clientY,
+    baseX: winPos.x,
+    baseY: winPos.y,
+    w: rect.width,
+    h: rect.height
+  };
+  try{ els.winHead.setPointerCapture(e.pointerId); }catch(err){}
+});
+
+els.winHead.addEventListener('pointermove', e => {
+  if (!winDrag) return;
+  const maxX = Math.max(0, (window.innerWidth  - winDrag.w) / 2 - 8);
+  const maxY = Math.max(0, (window.innerHeight - winDrag.h) / 2 - 8);
+
+  let nx = winDrag.baseX + (e.clientX - winDrag.startX);
+  let ny = winDrag.baseY + (e.clientY - winDrag.startY);
+
+  winPos.x = Math.min(Math.max(-maxX, nx), maxX);
+  winPos.y = Math.min(Math.max(-maxY, ny), maxY);
+
+  els.winBox.style.transform = `translate(${winPos.x}px, ${winPos.y}px)`;
+});
+
+els.winHead.addEventListener('pointerup', e => {
+  winDrag = null;
+  try{ els.winHead.releasePointerCapture(e.pointerId); }catch(err){}
+});
+els.winHead.addEventListener('pointercancel', () => { winDrag = null; });
+
+/* =========================================================
+   9. 事件绑定
+   ========================================================= */
+els.btnOpenList.addEventListener('click', async () => {
+  showView('list');
+  if (!state.listLoaded){
+    state.listLoaded = true;
+    await loadWorks();
+  }
+});
+
+els.btnBack.addEventListener('click', () => {
+  showView('home');
+});
+
+els.workList.addEventListener('click', e => {
+  const card = e.target.closest('.card');
+  if (!card) return;
+  const id = Number(card.dataset.id);
+  const work = state.works.find(w => w.id === id);
+  if (work) selectWork(work, card);
+});
+
+els.btnRead.addEventListener('click', () => {
+  if (!state.selected) return;
+  els.modeWorkName.textContent = state.selected.name;
+  els.modeModal.classList.remove('hidden');
+});
+
+els.modeModal.addEventListener('click', e => {
+  if (e.target === els.modeModal || e.target.dataset.action === 'cancel'){
+    els.modeModal.classList.add('hidden');
+    return;
+  }
+  const mode = e.target.dataset.mode;
+  if (!mode) return;
+  els.modeModal.classList.add('hidden');
+  const work = state.selected;
+  if (work) showWork(work, mode);
+});
+
+els.winClose.addEventListener('click', closeWin);
+
+/* ESC 快捷退出 */
+window.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!els.modeModal.classList.contains('hidden')){
+    els.modeModal.classList.add('hidden');
+  }else if (!els.winMode.classList.contains('hidden')){
+    closeWin();
+  }else if (!els.fullScreen.classList.contains('hidden')){
+    if (window.confirm('确定要退出全屏阅览吗？')) closeFull();
+  }
+});
+
+/* 窗口尺寸变化时把悬浮球拉回可视区 */
+window.addEventListener('resize', () => {
+  if (!els.fullScreen.classList.contains('hidden')) resetBallPosition();
+});
+
+/* =========================================================
+   10. 启动
+   ========================================================= */
+bootFonts();
+initGL();
+showView('home');
+</script>
+</body>
+</html>
