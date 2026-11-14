@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>坤坤工作室 · 粒子开场</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#05070c;
+  font-family:'PingFang SC','Microsoft YaHei',sans-serif;touch-action:none}
+#introC{position:fixed;left:0;top:0;width:100%;height:100%;display:block;z-index:1}
+
+#introTip{position:fixed;left:0;right:0;bottom:calc(96px + env(safe-area-inset-bottom));
+  text-align:center;font-size:12px;letter-spacing:3px;color:rgba(255,220,160,.40);
+  z-index:5;pointer-events:none;opacity:1;transition:opacity .9s ease}
+#introTip.hide{opacity:0}
+
+#ui{position:fixed;left:0;right:0;bottom:calc(20px + env(safe-area-inset-bottom));
+  display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:0 14px;z-index:20;opacity:.96;transition:opacity .8s ease}
+
+#txt-input{flex:0 1 240px;min-width:150px;padding:11px 18px;border-radius:30px;
+  border:1px solid rgba(255,205,120,.22);background:rgba(18,16,12,.72);color:#ffe3a6;
+  font-size:13px;letter-spacing:1px;text-align:center;outline:none;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  user-select:text;transition:all .2s ease;font-family:inherit}
+#txt-input::placeholder{color:rgba(255,220,160,.35)}
+#txt-input:focus{border-color:rgba(255,200,90,.65);
+  box-shadow:0 0 0 3px rgba(255,190,80,.10),0 4px 18px rgba(255,170,40,.10)}
+
+button{padding:11px 22px;border-radius:30px;
+  border:1px solid rgba(255,200,90,.35);
+  background:linear-gradient(135deg,rgba(96,66,12,.92),rgba(38,26,6,.92));
+  color:#ffd98a;font-size:13px;font-weight:700;letter-spacing:1.5px;
+  cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 4px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,220,150,.12);
+  transition:all .18s ease;font-family:inherit}
+button:hover{border-color:rgba(255,215,130,.7);color:#fff0c8;
+  box-shadow:0 6px 22px rgba(255,170,40,.22),inset 0 1px 0 rgba(255,220,150,.2)}
+button:active{transform:scale(.95)}
+
+#nogl{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  color:rgba(255,220,160,.6);font-size:14px;letter-spacing:2px;z-index:50;text-align:center;padding:20px}
+</style>
+</head>
+<body>
+<canvas id="introC"></canvas>
+<div id="introTip">轻点跳过</div>
+<div id="ui">
+  <input id="txt-input" type="text" value="🏀坤坤工作室" maxlength="24" spellcheck="false" placeholder="输入自定义文字">
+  <button id="btn-replay">重新播放</button>
+</div>
+<div id="nogl">当前浏览器不支持 WebGL2，无法播放粒子动画</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ==========================================================
+   0. 工具
+   ========================================================== */
+const TAU = Math.PI * 2;
+const rnd = (a,b) => a + Math.random()*(b-a);
+const clamp = (v,a,b) => v<a?a:(v>b?b:v);
+const easeOutCubic = x => 1 - Math.pow(1-x,3);
+const easeInOut = x => x<0.5 ? 4*x*x*x : 1 - Math.pow(-2*x+2,3)/2;
+
+const TL = { condStart: 1.05, condDur: 1.35, hold: 1.50, dispDur: 2.60 };
+
+const FONT_CN = '"PingFang SC","Hiragino Sans GB","Source Han Sans CN","Noto Sans CJK SC","Microsoft YaHei",-apple-system,sans-serif';
+const AVATAR_URL = 'https://static.iimg.live/uploads/vibrant-gallery-7847.png';
+
+const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(navigator.userAgent);
+const PARTICLE_BUDGET = IS_MOBILE ? 16000 : 34000;
+
+/* 噪声流场 */
+let FX = 0, FY = 0;
+function flow(x,y,tm){
+  const s1  = Math.sin(x*0.0092 + tm*0.19), c1x = Math.cos(x*0.0092 + tm*0.19);
+  const c1  = Math.cos(y*0.0113 - tm*0.16), s1y = Math.sin(y*0.0113 - tm*0.16);
+  const d2  = 0.62*Math.cos(x*0.0206 - y*0.0167 + tm*0.28);
+  const d3  = -0.34*Math.sin(x*0.0403 + y*0.0329 - tm*0.41);
+  const c4  = Math.cos(x*0.0751 + y*0.0683 - tm*0.62);
+  FX = -s1*s1y*0.0113 - d2*0.0167 + d3*0.0329 + c4*0.0048;
+  FY = -(c1x*0.0092*c1 + d2*0.0206 + d3*0.0403) - c4*0.0053;
+}
+
+/* ==========================================================
+   1. 全局状态
+   ========================================================== */
+let cv = document.getElementById('introC');   // ← 可替换（重播时换新画布）
+const tipEl = document.getElementById('introTip');
+const noGlEl = document.getElementById('nogl');
+
+let gl = null;
+let W = 0, H = 0, DPR = 1;
+
+let progP = null, progQ = null;
+let vaoP = null, vaoQ = null;
+let bufCorner = null, bufInst = null, bufQuad = null;
+let uP = {}, uQ = {};
+let rt = null;
+
+let instData = null;
+let instCount = 0;
+let P = [];
+
+let running = false, done = false, skipped = false, busy = false;
+let rafId = 0, last = 0, t = 0, tEnd = 10, dispAt = 6;
+let customText = '🏀坤坤工作室';
+
+/* 会话令牌：让上一次尚未完成的异步启动自动失效 */
+let session = 0;
+
+/* ==========================================================
+   2. 着色器
+   ========================================================== */
+const VS_P = `#version 300 es
+precision highp float;
+layout(location=0) in vec2 a_corner;
+layout(location=1) in vec4 a_inst;
+uniform vec2 uRes;
+out vec2 v_uv;
+out float v_a;
+void main(){
+  v_uv = a_corner;
+  v_a  = a_inst.w;
+  vec2 p = a_inst.xy + a_corner * a_inst.z;
+  vec2 clip = p / uRes * 2.0 - 1.0;
+  gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
+}`;
+
+const FS_P = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+in float v_a;
+out vec4 outColor;
+void main(){
+  float r2 = dot(v_uv, v_uv);
+  if (r2 > 1.0) discard;
+  float d = exp(-r2 * 3.6) * (1.0 - r2);
+  outColor = vec4(vec3(d * v_a), 1.0);
+}`;
+
+const VS_Q = `#version 300 es
+precision highp float;
+layout(location=0) in vec2 a_pos;
+void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }`;
+
+const FS_Q = `#version 300 es
+precision highp float;
+
+uniform sampler2D uDensity;
+uniform vec2  uRes;
+uniform vec2  uLight;
+uniform float uFade;
+
+out vec4 fragColor;
+
+const int STEPS = 32;
+
+void main(){
+  vec2 fc = gl_FragCoord.xy;
+  vec2 uv = fc / uRes;
+
+  float dens = texture(uDensity, uv).r;
+
+  vec2  toL  = uLight - fc;
+  float dist = length(toL);
+  vec2  dir  = toL / max(dist, 0.001);
+
+  float maxD    = min(dist, uRes.y * 0.80);
+  float stepLen = maxD / float(STEPS);
+  float trans   = 1.0;
+
+  for (int i = 1; i <= STEPS; i++){
+    vec2  sp = fc + dir * (float(i) * stepLen);
+    float sd = texture(uDensity, sp / uRes).r;
+    trans *= 1.0 - clamp(sd * 1.75, 0.0, 0.84);
+  }
+  trans = clamp(trans, 0.0, 1.0);
+
+  vec2 bp = uv - 0.5;
+  bp.x *= uRes.x / uRes.y;
+  float br = length(bp);
+
+  vec3 bg = mix(vec3(0.050,0.058,0.082), vec3(0.008,0.010,0.018),
+                smoothstep(0.0, 0.80, br));
+  bg += vec3(0.075,0.105,0.155) * exp(-br*br*4.2) * 0.42;
+
+  float m = 1.0 - exp(-dens * 2.7);
+
+  vec3 goldDark = vec3(0.52, 0.29, 0.055);
+  vec3 goldMid  = vec3(1.00, 0.735, 0.235);
+  vec3 goldHot  = vec3(1.00, 0.960, 0.790);
+
+  vec3 gcol = mix(goldDark, goldMid, smoothstep(0.0, 0.52, m));
+  gcol = mix(gcol, goldHot, smoothstep(0.52, 1.0, m) * 0.88);
+
+  float shade = 0.085 + 0.915 * trans;
+
+  vec3 col = bg + gcol * m * shade * 2.05;
+
+  col += vec3(1.0, 0.90, 0.62) * pow(m, 3.2) * trans * 0.55;
+
+  col *= 1.0 - 0.52 * smoothstep(0.42, 1.08, br);
+
+  col *= uFade;
+
+  fragColor = vec4(col, 1.0);
+}`;
+
+/* ==========================================================
+   3. WebGL 初始化
+   ========================================================== */
+function compileShader(type, src){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+    console.warn(gl.getShaderInfoLog(s));
+    gl.deleteShader(s);
+    return null;
+  }
+  return s;
+}
+
+function createProgram(vsSrc, fsSrc){
+  const vs = compileShader(gl.VERTEX_SHADER, vsSrc);
+  const fs = compileShader(gl.FRAGMENT_SHADER, fsSrc);
+  if (!vs || !fs) return null;
+  const p = gl.createProgram();
+  gl.attachShader(p, vs);
+  gl.attachShader(p, fs);
+  gl.linkProgram(p);
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)){
+    console.warn(gl.getProgramInfoLog(p));
+    gl.deleteProgram(p);
+    return null;
+  }
+  return p;
+}
+
+function createRT(w, h){
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  const fbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+
+  const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+  if (status !== gl.FRAMEBUFFER_COMPLETE){
+    console.warn('FBO incomplete');
+    return null;
+  }
+  return { tex, fbo, w, h };
+}
+
+function initGL(){
+  W = window.innerWidth;
+  H = window.innerHeight;
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  cv.width  = Math.max(2, Math.floor(W * DPR));
+  cv.height = Math.max(2, Math.floor(H * DPR));
+  cv.style.width  = W + 'px';
+  cv.style.height = H + 'px';
+
+  gl = cv.getContext('webgl2', {
+    alpha: false, antialias: false, depth: false, stencil: false,
+    premultipliedAlpha: false, powerPreference: 'high-performance',
+    preserveDrawingBuffer: false
+  });
+
+  if (!gl){ noGlEl.style.display = 'flex'; return false; }
+
+  progP = createProgram(VS_P, FS_P);
+  progQ = createProgram(VS_Q, FS_Q);
+  if (!progP || !progQ){ noGlEl.style.display = 'flex'; return false; }
+
+  uP.res = gl.getUniformLocation(progP, 'uRes');
+
+  uQ.density = gl.getUniformLocation(progQ, 'uDensity');
+  uQ.res     = gl.getUniformLocation(progQ, 'uRes');
+  uQ.light   = gl.getUniformLocation(progQ, 'uLight');
+  uQ.fade    = gl.getUniformLocation(progQ, 'uFade');
+
+  const cornerData = new Float32Array([-1,-1, 1,-1, -1,1, 1,1]);
+  bufCorner = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufCorner);
+  gl.bufferData(gl.ARRAY_BUFFER, cornerData, gl.STATIC_DRAW);
+
+  instData = new Float32Array(90000 * 4);
+  bufInst = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufInst);
+  gl.bufferData(gl.ARRAY_BUFFER, instData.byteLength, gl.DYNAMIC_DRAW);
+
+  vaoP = gl.createVertexArray();
+  gl.bindVertexArray(vaoP);
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufCorner);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufInst);
+  gl.enableVertexAttribArray(1);
+  gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(1, 1);
+  gl.bindVertexArray(null);
+
+  bufQuad = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufQuad);
+  gl.bufferData(gl.ARRAY_BUFFER, cornerData, gl.STATIC_DRAW);
+
+  vaoQ = gl.createVertexArray();
+  gl.bindVertexArray(vaoQ);
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufQuad);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  gl.bindVertexArray(null);
+
+  rt = createRT(cv.width, cv.height);
+  if (!rt){ noGlEl.style.display = 'flex'; return false; }
+
+  noGlEl.style.display = 'none';
+  return true;
+}
+
+/* ==========================================================
+   4. 采样：文字 / 图像
+   ========================================================== */
+function sampleText(text, sizePx, weight, family, centerY, budget){
+  const oc = document.createElement('canvas');
+  oc.width = W; oc.height = H;
+  const g = oc.getContext('2d', { willReadFrequently: true });
+
+  const setFont = s => { g.font = weight + ' ' + s + 'px ' + family; };
+  setFont(sizePx);
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillStyle = '#fff';
+
+  let width = g.measureText(text).width;
+  if (width > W * 0.86){
+    sizePx *= (W * 0.86) / width;
+    setFont(sizePx);
+    width = g.measureText(text).width;
+  }
+
+  const chars = Array.from(text);
+  const ws = chars.map(c => g.measureText(c).width);
+  const startX = W / 2 - width / 2;
+
+  const boxes = [];
+  let xx = startX;
+  for (let i = 0; i < chars.length; i++){
+    boxes.push({ x0: xx - 2, x1: xx + ws[i] + 2 });
+    xx += ws[i];
+  }
+
+  g.fillText(text, W / 2, centerY);
+
+  let data;
+  try { data = g.getImageData(0, 0, W, H).data; }
+  catch(e){ return null; }
+
+  const colIdx = new Int16Array(W).fill(-1);
+  for (let x = 0; x < W; x++){
+    for (let i = 0; i < boxes.length; i++){
+      if (x >= boxes[i].x0 && x <= boxes[i].x1){ colIdx[x] = i; break; }
+    }
+  }
+
+  const raw = [];
+  for (let y = 0; y < H; y++){
+    const row = y * W;
+    for (let x = 0; x < W; x++){
+      if (data[(row + x) * 4 + 3] > 72){
+        const ci = colIdx[x];
+        if (ci >= 0) raw.push(x, y, ci);
+      }
+    }
+  }
+
+  const n = raw.length / 3;
+  if (n === 0) return null;
+
+  const k = n > budget ? budget / n : 1;
+  const arr = [];
+  for (let i = 0; i < n; i++){
+    if (k < 1 && Math.random() > k) continue;
+    arr.push(raw[i*3], raw[i*3+1], raw[i*3+2]);
+  }
+
+  return { arr, count: arr.length / 3, chars: boxes.length };
+}
+
+function sampleImage(img, size, cx, cy, budget){
+  const oc = document.createElement('canvas');
+  oc.width = W; oc.height = H;
+  const g = oc.getContext('2d', { willReadFrequently: true });
+
+  g.beginPath();
+  g.arc(cx, cy, size / 2, 0, TAU);
+  g.closePath();
+  g.clip();
+  g.drawImage(img, cx - size/2, cy - size/2, size, size);
+
+  let data;
+  try { data = g.getImageData(0, 0, W, H).data; }
+  catch(e){ return null; }
+
+  const x0 = Math.max(0, Math.floor(cx - size/2));
+  const x1 = Math.min(W, Math.ceil(cx + size/2));
+  const y0 = Math.max(0, Math.floor(cy - size/2));
+  const y1 = Math.min(H, Math.ceil(cy + size/2));
+  const r2m = (size/2) * (size/2);
+
+  const raw = [];
+  for (let y = y0; y < y1; y++){
+    const dy = y - cy;
+    for (let x = x0; x < x1; x++){
+      const dx = x - cx;
+      if (dx*dx + dy*dy > r2m) continue;
+      if (data[(y*W + x) * 4 + 3] > 70) raw.push(x, y, 0);
+    }
+  }
+
+  const n = raw.length / 3;
+  if (n === 0) return null;
+
+  const k = n > budget ? budget / n : 1;
+  const arr = [];
+  for (let i = 0; i < n; i++){
+    if (k < 1 && Math.random() > k) continue;
+    arr.push(raw[i*3], raw[i*3+1], 0);
+  }
+  return { arr, count: arr.length / 3, chars: 1 };
+}
+
+/* ==========================================================
+   5. 构建粒子
+   ========================================================== */
+function addPoints(pts, opt){
+  const n = pts.count;
+  const a = pts.arr;
+  const chars = Math.max(1, pts.chars);
+
+  for (let i = 0; i < n; i++){
+    const tx = a[i*3]     + rnd(-0.6, 0.6);
+    const ty = a[i*3 + 1] + rnd(-0.6, 0.6);
+    const ci = a[i*3 + 2];
+
+    const ang = rnd(0, TAU);
+    const rad = rnd(30, 150);
+
+    const mx = tx + Math.cos(ang) * rad * 1.55;
+    const my = ty + Math.sin(ang) * rad * 0.85 + rnd(70, 280);
+
+    P.push({
+      tx, ty, mx, my,
+      x: mx, y: my,
+
+      bend: rnd(-1, 1) * Math.min(90, opt.size * 0.9),
+      lift: rnd(8, 52),
+
+      ci, cmax: chars, stag: opt.stag,
+      cd: TL.condStart + ci * opt.stag + rnd(0, 0.15),
+      dur: TL.condDur * rnd(0.85, 1.18),
+      dd: 0,
+      dDisp: TL.dispDur * rnd(0.78, 1.10),
+
+      mS: rnd(6, 17),
+      sS: opt.size * rnd(0.82, 1.22),
+      mA: rnd(0.010, 0.030),
+      sA: rnd(0.070, 0.140) * opt.boost,
+      aD: 0,
+
+      vx: 0, vy: 0,
+
+      seed: Math.random(),
+      fph: rnd(0, TAU),
+      ffr: rnd(0.75, 1.45),
+      tw:  rnd(0, TAU),
+      twR: rnd(0.35, 0.95),
+      shA: rnd(1.2, 2.8),
+      spin: Math.random() < 0.5 ? -1 : 1,
+      drag: rnd(0.985, 0.9995),
+      fExp: rnd(1.00, 1.80),
+
+      free: false
+    });
+  }
+}
+
+function buildScene(avatarImg){
+  P = [];
+  tEnd = 10;
+  dispAt = 6;
+
+  const sizeMain = clamp(Math.min(W * 0.135, H * 0.155), 34, 150);
+  const yText    = H * 0.535;
+  const yAvatar  = H * 0.5 - sizeMain * 1.20;
+  const avatarSz = Math.min(sizeMain * 1.45, W * 0.20, H * 0.20);
+
+  let avatarOk = false;
+  if (avatarImg && avatarSz > 20){
+    const av = sampleImage(avatarImg, avatarSz, W / 2, yAvatar, 3000);
+    if (av && av.count > 30){
+      addPoints(av, { size: 2.1, stag: 0.10, boost: 1.25 });
+      avatarOk = true;
+    }
+  }
+  if (!avatarOk && avatarSz > 20){
+    const pts = { arr: [], count: 0, chars: 1 };
+    const cx = W / 2, cy = yAvatar, r = avatarSz / 2;
+    const N = 1800;
+    for (let i = 0; i < N; i++){
+      const a2 = Math.random() * TAU;
+      const d2 = Math.sqrt(Math.random()) * r * 0.92;
+      pts.arr.push(cx + Math.cos(a2) * d2, cy + Math.sin(a2) * d2, 0);
+    }
+    pts.count = N;
+    addPoints(pts, { size: 2.1, stag: 0.10, boost: 1.1 });
+  }
+
+  const budget = PARTICLE_BUDGET;
+  const txt = customText || '🏀坤坤工作室';
+  const main = sampleText(txt, sizeMain, '900', FONT_CN, yText, budget);
+
+  if (main){
+    addPoints(main, { size: 2.45, stag: 0.055, boost: 1.0 });
+  } else {
+    const pts = { arr: [], count: 0, chars: 1 };
+    const n = Math.round(W * 0.5);
+    for (let i = 0; i < n; i++){
+      pts.arr.push(W * 0.25 + i, yText, 0);
+    }
+    pts.count = n;
+    addPoints(pts, { size: 2.4, stag: 0.0, boost: 1.0 });
+  }
+
+  let lastCond = 0;
+  for (let i = 0; i < P.length; i++){
+    const c = P[i].cd + P[i].dur;
+    if (c > lastCond) lastCond = c;
+  }
+  dispAt = lastCond + TL.hold;
+
+  for (let i = 0; i < P.length; i++){
+    const p = P[i];
+    p.dd = dispAt + (p.cmax - 1 - p.ci) * p.stag * 0.85 + rnd(0, 0.34);
+  }
+
+  let lastD = 0;
+  for (let i = 0; i < P.length; i++){
+    const d = P[i].dd + P[i].dDisp;
+    if (d > lastD) lastD = d;
+  }
+  tEnd = lastD + 0.25;
+}
+
+/* ==========================================================
+   6. 每帧更新
+   ========================================================== */
+function updateParticles(dt){
+  t += dt;
+
+  const mistIn = easeOutCubic(clamp(t / 0.9, 0, 1));
+  const n = P.length;
+  let idx = 0;
+
+  for (let i = 0; i < n; i++){
+    const p = P[i];
+
+    const pr = clamp((t - p.cd) / p.dur, 0, 1);
+    const e  = easeInOut(pr);
+
+    if (!p.free){
+
+      if (pr < 1){
+        flow(p.mx, p.my, t * 0.9);
+        const sw = 1 - 0.5 * pr;
+        p.mx += FX * 2000 * sw * dt;
+        p.my += (FY * 2000 * sw - 38) * dt;
+        p.mx += (p.tx - p.mx) * 0.5 * pr * pr * dt;
+        p.my += (p.ty - p.my) * 0.3 * pr * pr * dt;
+      }
+
+      const u = 1 - e;
+      const cxp = (p.mx + p.tx) * 0.5 + p.bend * (1 - pr * 0.55);
+      const cyp = (p.my + p.ty) * 0.5 - p.lift * (1 - pr * 0.35);
+
+      let px = u*u*p.mx + 2*u*e*cxp + e*e*p.tx;
+      let py = u*u*p.my + 2*u*e*cyp + e*e*p.ty;
+
+      if (pr >= 1){
+        const bt = t - p.cd - p.dur;
+        const sd = Math.exp(-bt * 2.0);
+        flow(p.tx, p.ty, t * 0.55);
+        py -= 3.2 * (bt / (bt + 1.1));
+        px += FX * (85 + 130 * sd) + Math.sin(bt * 11  + p.seed * 7) * p.shA * sd;
+        py += FY * (85 + 130 * sd) + Math.cos(bt * 9.5 + p.seed * 5) * p.shA * sd;
+
+        const pre = clamp((t - (p.dd - 0.6)) / 0.6, 0, 1);
+        if (pre > 0){
+          px += Math.sin(t * 17 + p.seed * 9) * 1.9 * pre * pre;
+          py += Math.cos(t * 15 + p.seed * 4) * 1.9 * pre * pre;
+        }
+      }
+
+      p.x = px;
+      p.y = py;
+
+      const doneP = pr >= 1;
+      const kSz = doneP ? 1 : Math.pow(e, 0.75);
+      const kAl = doneP ? 1 : Math.pow(e, 0.50);
+
+      const breathe = 1 + 0.16 * Math.sin(t * 0.85 + p.fph);
+      const sM = p.mS * breathe;
+      p.s = sM + (p.sS - sM) * kSz;
+      if (doneP) p.s *= 1 + 0.035 * Math.sin(t * 0.62 + p.fph);
+
+      let flick;
+      if (doneP){
+        const ph = t * p.twR + p.tw;
+        const fr = ph - Math.floor(ph);
+        const pulse = fr < 0.07 ? 1 - fr / 0.07 : 0;
+        flick = (0.96 + 0.04 * Math.sin(t * p.ffr * 0.7 + p.fph))
+              * (0.94 + 0.06 * Math.sin(t * 0.85 - p.tx * 0.013))
+              * (1 + 0.85 * pulse * pulse);
+      } else {
+        flick = 0.86 + 0.14 * Math.sin(t * p.ffr + p.fph);
+      }
+
+      const kS = clamp(Math.pow(2.2 / p.s, 0.55), 0.55, 1.55);
+
+      p.aD = (p.mA + (p.sA - p.mA) * kAl) * mistIn * flick * kS;
+
+      if (t >= p.dd){
+        p.free = true;
+        const dx0 = p.x - W / 2;
+        const dy0 = p.y - H * 0.46;
+        const d0  = Math.max(1, Math.hypot(dx0, dy0));
+        const rad = rnd(30, 88) * (0.62 + 0.62 * Math.min(1, d0 / 210));
+        p.vx = (dx0 / d0) * rad + (-dy0 / d0) * rad * 0.75 * p.spin;
+        p.vy = (dy0 / d0) * rad * 0.32 - rnd(26, 86);
+      }
+
+    } else {
+
+      const de = clamp((t - p.dd) / p.dDisp, 0, 1);
+
+      flow(p.x, p.y, t * 0.8);
+      p.vx += FX * 1600 * dt;
+      p.vy += FY * 1600 * dt - 26 * dt;
+
+      const dr = Math.pow(p.drag, dt * 60);
+      p.vx *= dr;
+      p.vy *= dr;
+
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+
+      p.s = p.sS * (1 + 0.55 * Math.pow(de, 0.6));
+
+      const fade = Math.pow(1 - de, p.fExp);
+      p.aD = p.sA * fade * mistIn * (0.90 + 0.10 * Math.sin(t * p.ffr + p.fph));
+    }
+
+    if (p.aD > 0.0012 && p.s > 0.35){
+      instData[idx++] = p.x;
+      instData[idx++] = p.y;
+      instData[idx++] = p.s;
+      instData[idx++] = p.aD;
+    }
+  }
+
+  instCount = idx / 4;
+}
+
+/* ==========================================================
+   7. 渲染
+   ========================================================== */
+function render(){
+  if (!gl || !rt) return;
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fbo);
+  gl.viewport(0, 0, rt.w, rt.h);
+  gl.clearColor(0, 0, 0, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  if (instCount > 0){
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE);
+
+    gl.useProgram(progP);
+    gl.uniform2f(uP.res, W, H);
+    gl.bindVertexArray(vaoP);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufInst);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, instData, 0, instCount * 4);
+
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, instCount);
+  }
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, cv.width, cv.height);
+  gl.disable(gl.BLEND);
+
+  gl.useProgram(progQ);
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, rt.tex);
+  gl.uniform1i(uQ.density, 0);
+
+  gl.uniform2f(uQ.res, cv.width, cv.height);
+  gl.uniform2f(uQ.light, cv.width * 1.16, -cv.height * 0.24);
+
+  const fade = clamp((tEnd - t) / 0.95, 0, 1);
+  gl.uniform1f(uQ.fade, fade);
+
+  gl.bindVertexArray(vaoQ);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+/* ==========================================================
+   8. 主循环
+   ========================================================== */
+function frame(now){
+  if (!running) return;
+  rafId = requestAnimationFrame(frame);
+
+  if (!last) last = now;
+  const dt0 = Math.min(0.05, (now - last) / 1000);
+  last = now;
+
+  const dt = dt0 * (skipped ? 8 : 1);
+
+  updateParticles(dt);
+  render();
+
+  if (t > tEnd + 0.25){
+    finish();
+  }
+}
+
+function finish(){
+  if (done) return;
+  done = true;
+  running = false;
+  cancelAnimationFrame(rafId);
+  tipEl.classList.add('hide');
+}
+
+/* ==========================================================
+   9. 资源释放 & 画布替换
+   ========================================================== */
+function disposeGL(){
+  if (!gl) return;
+
+  try {
+    if (progP){ gl.deleteProgram(progP); progP = null; }
+    if (progQ){ gl.deleteProgram(progQ); progQ = null; }
+
+    if (bufCorner){ gl.deleteBuffer(bufCorner); bufCorner = null; }
+    if (bufInst){ gl.deleteBuffer(bufInst); bufInst = null; }
+    if (bufQuad){ gl.deleteBuffer(bufQuad); bufQuad = null; }
+
+    if (vaoP){ gl.deleteVertexArray(vaoP); vaoP = null; }
+    if (vaoQ){ gl.deleteVertexArray(vaoQ); vaoQ = null; }
+
+    if (rt){
+      gl.deleteFramebuffer(rt.fbo);
+      gl.deleteTexture(rt.tex);
+      rt = null;
+    }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, cv.width, cv.height);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.flush();
+  } catch(e){ /* ignore */ }
+
+  /* 强制丢弃上下文（该画布即将被替换） */
+  try {
+    const ext = gl.getExtension('WEBGL_lose_context');
+    if (ext) ext.loseContext();
+  } catch(e){}
+
+  gl = null;
+  P = [];
+  instData = null;
+  instCount = 0;
+  uP = {};
+  uQ = {};
+}
+
+/* 替换为一个全新的 canvas —— 这是修复重播报错的关键：
+   一旦上下文被 loseContext，同一个 canvas 上再 getContext('webgl2')
+   在部分浏览器会返回 null / 丢失上下文，因此必须换新画布。 */
+function freshCanvas(){
+  const old = cv;
+  const n = document.createElement('canvas');
+  n.id = 'introC';
+  old.replaceWith(n);
+  cv = n;
+  n.addEventListener('pointerdown', skipNow, { passive: true });
+}
+
+/* ==========================================================
+   10. 头像加载
+   ========================================================== */
+function loadAvatar(){
+  return new Promise(resolve => {
+    let settled = false;
+    const done = v => { if (!settled){ settled = true; resolve(v); } };
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
+
+    img.onload = () => done(img);
+    img.onerror = () => done(null);
+
+    setTimeout(() => done(null), 3500);
+
+    img.src = AVATAR_URL + '?t=' + Date.now();
+  });
+}
+
+/* ==========================================================
+   11. 启动 / 重播
+   ========================================================== */
+async function startShow(){
+  const mySession = ++session;
+
+  done = false;
+  running = false;
+  skipped = false;
+  t = 0;
+  last = 0;
+  instCount = 0;
+
+  tipEl.classList.remove('hide');
+
+  if (!initGL()) return;
+
+  const img = await loadAvatar();
+
+  if (mySession !== session || !gl) return;
+
+  buildScene(img);
+
+  if (mySession !== session || !gl) return;
+
+  running = true;
+  rafId = requestAnimationFrame(frame);
+}
+
+async function replay(){
+  if (busy) return;
+  busy = true;
+
+  const v = (document.getElementById('txt-input').value || '').trim();
+  customText = v.length ? v : '🏀坤坤工作室';
+
+  /* 让任何未完成的旧启动失效 */
+  session++;
+
+  running = false;
+  done = true;
+  cancelAnimationFrame(rafId);
+  rafId = 0;
+
+  /* 释放旧上下文与显存 */
+  disposeGL();
+
+  /* 换一个全新的 canvas，避免上下文丢失导致 getContext 失败 */
+  freshCanvas();
+
+  /* 给浏览器一点回收时间 */
+  await new Promise(r => setTimeout(r, 60));
+
+  await startShow();
+
+  busy = false;
+}
+
+/* ==========================================================
+   12. 交互
+   ========================================================== */
+function skipNow(){
+  if (running && !done) skipped = true;
+}
+
+cv.addEventListener('pointerdown', skipNow, { passive: true });
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter'){
+    skipNow();
+  }
+});
+window.__INTRO_SKIP__ = skipNow;
+
+document.getElementById('btn-replay').addEventListener('click', replay);
+
+document.getElementById('txt-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter'){
+    e.preventDefault();
+    replay();
+  }
+});
+
+/* 窗口尺寸变化 */
+let rzTimer = null;
+window.addEventListener('resize', () => {
+  if (!running) return;
+  clearTimeout(rzTimer);
+  rzTimer = setTimeout(() => { replay(); }, 320);
+});
+window.addEventListener('orientationchange', () => {
+  if (!running) return;
+  setTimeout(() => { replay(); }, 400);
+});
+
+/* ==========================================================
+   13. 启动
+   ========================================================== */
+startShow();
+
+})();
+</script>
+</body>
+</html>
